@@ -126,31 +126,27 @@ Consider the user's profile when scoring and recommending. ${profileCtx}${data.n
 
     const parsed = MealAnalysisSchema.parse(extractJson(content));
 
-    const { data: inserted, error } = await context.supabase
-      .from("meals")
-      .insert({
-        user_id: context.userId,
-        name: parsed.name,
-        foods: parsed.foods,
-        calories: parsed.calories,
-        protein: parsed.protein,
-        carbs: parsed.carbs,
-        fat: parsed.fat,
-        fiber: parsed.fiber,
-        micros: parsed.micros,
-        meal_score: parsed.meal_score,
-        grade: parsed.grade,
-        analysis: {
-          highlights: parsed.highlights,
-          concerns: parsed.concerns,
-          recommendations: parsed.recommendations,
-          confidence: parsed.confidence,
-        },
-      })
-      .select()
-      .single();
+    const { error } = await context.supabase.from("meals").insert({
+      user_id: context.userId,
+      name: parsed.name,
+      foods: parsed.foods,
+      calories: parsed.calories,
+      protein: parsed.protein,
+      carbs: parsed.carbs,
+      fat: parsed.fat,
+      fiber: parsed.fiber,
+      micros: parsed.micros,
+      meal_score: parsed.meal_score,
+      grade: parsed.grade,
+      analysis: {
+        highlights: parsed.highlights,
+        concerns: parsed.concerns,
+        recommendations: parsed.recommendations,
+        confidence: parsed.confidence,
+      },
+    });
     if (error) throw new Error(error.message);
-    return inserted;
+    return parsed;
   });
 
 // ---------- Chat assistant ----------
