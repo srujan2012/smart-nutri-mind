@@ -14,7 +14,138 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      meals: {
+        Row: {
+          analysis: Json
+          calories: number
+          carbs: number
+          consumed_at: string
+          created_at: string
+          fat: number
+          fiber: number
+          foods: Json
+          grade: string | null
+          id: string
+          meal_score: number | null
+          meal_type: string | null
+          micros: Json
+          name: string
+          protein: number
+          user_id: string
+        }
+        Insert: {
+          analysis?: Json
+          calories?: number
+          carbs?: number
+          consumed_at?: string
+          created_at?: string
+          fat?: number
+          fiber?: number
+          foods?: Json
+          grade?: string | null
+          id?: string
+          meal_score?: number | null
+          meal_type?: string | null
+          micros?: Json
+          name: string
+          protein?: number
+          user_id: string
+        }
+        Update: {
+          analysis?: Json
+          calories?: number
+          carbs?: number
+          consumed_at?: string
+          created_at?: string
+          fat?: number
+          fiber?: number
+          foods?: Json
+          grade?: string | null
+          id?: string
+          meal_score?: number | null
+          meal_type?: string | null
+          micros?: Json
+          name?: string
+          protein?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          activity_level: string | null
+          age: number | null
+          calorie_target: number | null
+          carbs_target: number | null
+          conditions: string[] | null
+          country: string | null
+          created_at: string
+          daily_budget: number | null
+          fat_target: number | null
+          fiber_target: number | null
+          food_preference: string | null
+          full_name: string | null
+          gender: string | null
+          goal: string | null
+          height_cm: number | null
+          id: string
+          lifestyle: string[] | null
+          medications: string[] | null
+          onboarded: boolean
+          protein_target: number | null
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          activity_level?: string | null
+          age?: number | null
+          calorie_target?: number | null
+          carbs_target?: number | null
+          conditions?: string[] | null
+          country?: string | null
+          created_at?: string
+          daily_budget?: number | null
+          fat_target?: number | null
+          fiber_target?: number | null
+          food_preference?: string | null
+          full_name?: string | null
+          gender?: string | null
+          goal?: string | null
+          height_cm?: number | null
+          id: string
+          lifestyle?: string[] | null
+          medications?: string[] | null
+          onboarded?: boolean
+          protein_target?: number | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          activity_level?: string | null
+          age?: number | null
+          calorie_target?: number | null
+          carbs_target?: number | null
+          conditions?: string[] | null
+          country?: string | null
+          created_at?: string
+          daily_budget?: number | null
+          fat_target?: number | null
+          fiber_target?: number | null
+          food_preference?: string | null
+          full_name?: string | null
+          gender?: string | null
+          goal?: string | null
+          height_cm?: number | null
+          id?: string
+          lifestyle?: string[] | null
+          medications?: string[] | null
+          onboarded?: boolean
+          protein_target?: number | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
