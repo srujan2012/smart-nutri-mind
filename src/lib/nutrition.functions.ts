@@ -171,9 +171,13 @@ Consider the user's profile when scoring and recommending. ${profileCtx}${data.n
       analysis: {
         highlights: parsed.highlights,
         concerns: parsed.concerns,
+        imbalances: parsed.imbalances,
+        add_to_this_meal: parsed.add_to_this_meal,
+        add_to_next_meal: parsed.add_to_next_meal,
         recommendations: parsed.recommendations,
         confidence: parsed.confidence,
       },
+
     });
     if (error) throw new Error(error.message);
     return parsed;
