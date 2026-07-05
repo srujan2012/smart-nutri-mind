@@ -60,6 +60,30 @@ const MealAnalysisSchema = z.object({
   grade: z.string(),
   highlights: z.array(z.string()).default([]),
   concerns: z.array(z.string()).default([]),
+  imbalances: z.array(
+    z.object({
+      nutrient: z.string(),
+      status: z.enum(["low", "high"]),
+      severity: z.enum(["mild", "moderate", "severe"]),
+      explanation: z.string(),
+    }),
+  ).default([]),
+  add_to_this_meal: z.array(
+    z.object({
+      name: z.string(),
+      amount: z.string(),
+      fixes: z.string(),
+      calories: z.number().default(0),
+    }),
+  ).default([]),
+  add_to_next_meal: z.array(
+    z.object({
+      name: z.string(),
+      amount: z.string(),
+      fixes: z.string(),
+      calories: z.number().default(0),
+    }),
+  ).default([]),
   recommendations: z.array(
     z.object({
       nutrient: z.string(),
@@ -71,6 +95,7 @@ const MealAnalysisSchema = z.object({
   ).default([]),
   confidence: z.number().min(0).max(1).default(0.75),
 });
+
 
 export type MealAnalysis = z.infer<typeof MealAnalysisSchema>;
 
