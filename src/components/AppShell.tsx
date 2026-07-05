@@ -64,7 +64,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Mobile nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden glass-strong border-t border-border/60">
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-6">
+
           {nav.map((n) => (
             <Link
               key={n.to}
