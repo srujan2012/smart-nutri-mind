@@ -130,10 +130,15 @@ export const analyzeMeal = createServerFn({ method: "POST" })
   "micros": { "iron_mg": number, "calcium_mg": number, "vitamin_c_mg": number, "vitamin_d_iu": number, "b12_mcg": number, "sodium_mg": number },
   "meal_score": 0-100, "grade": "A"|"B"|"C"|"D"|"F",
   "highlights": [string], "concerns": [string],
-  "recommendations": [{"nutrient": string, "current": number, "recommended": number, "action": string (specific food + serving), "priority": "now"|"next-meal"|"info"}],
+  "imbalances": [{"nutrient": string, "status": "low"|"high", "severity": "mild"|"moderate"|"severe", "explanation": string (1 sentence why this is imbalanced for THIS user)}],
+  "add_to_this_meal": [{"name": string (specific food), "amount": string (e.g. '1/2 cup', '30g'), "fixes": string (which imbalance it corrects), "calories": number}] — ONLY items that pair well with the current plate right now (garnish, side, drink, topping). 1-4 items. Empty if meal is already balanced.
+  "add_to_next_meal": [{"name": string, "amount": string, "fixes": string, "calories": number}] — items to eat later today/tomorrow to cover remaining gaps. 1-4 items.
+  "recommendations": [{"nutrient": string, "current": number, "recommended": number, "action": string, "priority": "now"|"next-meal"|"info"}],
   "confidence": 0-1
 }
+Be specific and realistic. For 'add_to_this_meal' suggest things the user can literally add to the plate in front of them (a squeeze of lemon, a sprinkle of seeds, a glass of milk, a side of yogurt). For 'add_to_next_meal' suggest a proper dish or ingredient.
 Consider the user's profile when scoring and recommending. ${profileCtx}${data.note ? ` User note: ${data.note}` : ""}`;
+
 
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
