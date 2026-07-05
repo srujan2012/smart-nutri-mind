@@ -297,3 +297,169 @@ export const generateMealPlan = createServerFn({ method: "POST" })
       }>;
     };
   });
+
+// ---------- Add a supplemental item to an existing meal ----------
+export const addToMeal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        mealId: z.string().uuid(),
+        item: z.object({
+          name: z.string(),
+          amount: z.string(),
+          calories: z.number().default(0),
+        }),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: meal, error: readErr } = await context.supabase
+      .from("meals")
+      .select("*")
+      .eq("id", data.mealId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!meal) throw new Error("Meal not found");
+
+    // Ask AI for macro estimate of the added item
+    const content = await callGateway({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        {
+          role: "system",
+          content:
+            'Estimate nutrition for a single food item. Return ONLY JSON: {"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number}',
+        },
+        { role: "user", content: `${data.item.amount} ${data.item.name}` },
+      ],
+    });
+    const macros = extractJson(content) as {
+      calories: number; protein: number; carbs: number; fat: number; fiber: number;
+    };
+
+    const foods = Array.isArray(meal.foods) ? meal.foods : [];
+    const updatedFoods = [
+      ...foods,
+      { name: data.item.name, portion: data.item.amount, calories: macros.calories, added: true },
+    ];
+
+    const { error } = await context.supabase
+      .from("meals")
+      .update({
+        foods: updatedFoods,
+        calories: Number(meal.calories ?? 0) + (macros.calories || 0),
+        protein: Number(meal.protein ?? 0) + (macros.protein || 0),
+        carbs: Number(meal.carbs ?? 0) + (macros.carbs || 0),
+        fat: Number(meal.fat ?? 0) + (macros.fat || 0),
+        fiber: Number(meal.fiber ?? 0) + (macros.fiber || 0),
+      })
+      .eq("id", data.mealId)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true, added: macros };
+  });
+
+// ---------- Scan refrigerator / pantry photo ----------
+const FridgeScanSchema = z.object({
+  items: z.array(
+    z.object({
+      name: z.string(),
+      category: z.string(),
+      freshness: z.enum(["fresh", "use-soon", "check"]).default("fresh"),
+    }),
+  ),
+  missing_staples: z.array(z.string()).default([]),
+  meal_ideas: z.array(
+    z.object({
+      name: z.string(),
+      slot: z.enum(["breakfast", "lunch", "dinner", "snack"]),
+      uses: z.array(z.string()),
+      needs: z.array(z.string()).default([]),
+      why: z.string(),
+      calories: z.number(),
+      protein: z.number(),
+      carbs: z.number(),
+      fat: z.number(),
+      fiber: z.number(),
+      prep_minutes: z.number(),
+      instructions: z.string(),
+      fits_goal_score: z.number().min(0).max(100),
+    }),
+  ),
+  best_pick: z.string().optional(),
+});
+
+export type FridgeScan = z.infer<typeof FridgeScanSchema>;
+
+export const scanFridge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        imageDataUrl: z.string().startsWith("data:image/"),
+        note: z.string().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const { data: meals } = await context.supabase
+      .from("meals")
+      .select("calories, protein, fiber")
+      .eq("user_id", context.userId)
+      .gte("consumed_at", today.toISOString());
+    const consumed = (meals ?? []).reduce(
+      (a, m) => ({
+        calories: a.calories + Number(m.calories ?? 0),
+        protein: a.protein + Number(m.protein ?? 0),
+        fiber: a.fiber + Number(m.fiber ?? 0),
+      }),
+      { calories: 0, protein: 0, fiber: 0 },
+    );
+    const remaining = profile
+      ? {
+          calories: Math.max(0, (profile.calorie_target ?? 2000) - consumed.calories),
+          protein: Math.max(0, (profile.protein_target ?? 100) - consumed.protein),
+          fiber: Math.max(0, (profile.fiber_target ?? 30) - consumed.fiber),
+        }
+      : { calories: 2000, protein: 100, fiber: 30 };
+
+    const profileCtx = profile
+      ? `Diet: ${profile.food_preference}. Goal: ${profile.goal}. Conditions: ${(profile.conditions ?? []).join(", ") || "none"}. Country: ${profile.country}. Remaining today: ${remaining.calories.toFixed(0)}kcal, ${remaining.protein.toFixed(0)}g protein, ${remaining.fiber.toFixed(0)}g fiber.`
+      : "";
+
+    const system = `You are NutriMind Pantry Vision. Look at this photo of a refrigerator, pantry, or grocery haul. Identify every visible food ingredient, then propose meals the user can cook using ONLY (or mostly) those ingredients — tuned to their profile and today's remaining nutrition targets. Return ONLY JSON:
+{
+  "items": [{"name": string, "category": "produce"|"dairy"|"protein"|"grain"|"condiment"|"beverage"|"other", "freshness": "fresh"|"use-soon"|"check"}],
+  "missing_staples": [string] — pantry basics that would unlock more meals if bought,
+  "meal_ideas": [{"name": string, "slot": "breakfast"|"lunch"|"dinner"|"snack", "uses": [string], "needs": [string] (only if truly required), "why": string (1 sentence tying to user's goal / remaining targets), "calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number, "prep_minutes": number, "instructions": string (3-5 short steps, joined with " • "), "fits_goal_score": 0-100}],
+  "best_pick": string (name of the single best meal_idea for right now)
+}
+Give 3-5 meal ideas, ranked best first. ${profileCtx}${data.note ? ` Note: ${data.note}` : ""}`;
+
+    const content = await callGateway({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: system },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Scan this fridge/pantry. Return JSON only." },
+            { type: "image_url", image_url: { url: data.imageDataUrl } },
+          ],
+        },
+      ],
+    });
+
+    return FridgeScanSchema.parse(extractJson(content));
+  });
+
