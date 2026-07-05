@@ -1,8 +1,13 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { analyzeMeal } from "@/lib/nutrition.functions";
-import { Camera, Upload, Sparkles, ArrowRight, AlertCircle, CheckCircle2, Lightbulb } from "lucide-react";
+import { analyzeMeal, addToMeal } from "@/lib/nutrition.functions";
+import { fileToCompressedDataUrl } from "@/lib/image-compress";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Camera, Upload, Sparkles, ArrowRight, AlertCircle, CheckCircle2,
+  Lightbulb, Plus, TrendingDown, TrendingUp, Clock, Check,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/scan")({
@@ -14,17 +19,27 @@ type Analysis = Awaited<ReturnType<typeof analyzeMeal>>;
 function Scan() {
   const router = useRouter();
   const analyze = useServerFn(analyzeMeal);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const addItem = useServerFn(addToMeal);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Analysis | null>(null);
+  const [mealId, setMealId] = useState<string | null>(null);
+  const [addedKeys, setAddedKeys] = useState<Set<string>>(new Set());
+  const [addingKey, setAddingKey] = useState<string | null>(null);
 
   const onFile = async (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => setPreview(reader.result as string);
-    reader.readAsDataURL(file);
-    setResult(null);
+    try {
+      const dataUrl = await fileToCompressedDataUrl(file, { maxSize: 1280, quality: 0.82 });
+      setPreview(dataUrl);
+      setResult(null);
+      setMealId(null);
+      setAddedKeys(new Set());
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not read image");
+    }
   };
 
   const run = async () => {
@@ -33,6 +48,14 @@ function Scan() {
     try {
       const r = await analyze({ data: { imageDataUrl: preview, note } });
       setResult(r);
+      // grab the just-inserted meal id so we can add items to it
+      const { data: latest } = await supabase
+        .from("meals")
+        .select("id")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latest) setMealId(latest.id);
       toast.success("Meal analyzed & logged");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Analysis failed");
@@ -41,7 +64,26 @@ function Scan() {
     }
   };
 
-  const reset = () => { setPreview(null); setResult(null); setNote(""); };
+  const addToCurrentMeal = async (
+    item: { name: string; amount: string; calories: number },
+    key: string,
+  ) => {
+    if (!mealId) return toast.error("Meal not saved yet");
+    setAddingKey(key);
+    try {
+      await addItem({ data: { mealId, item } });
+      setAddedKeys((s) => new Set(s).add(key));
+      toast.success(`Added ${item.name} to this meal`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not add");
+    } finally {
+      setAddingKey(null);
+    }
+  };
+
+  const reset = () => {
+    setPreview(null); setResult(null); setNote(""); setMealId(null); setAddedKeys(new Set());
+  };
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -51,28 +93,51 @@ function Scan() {
         </div>
         <h1 className="mt-1 font-display text-3xl font-bold">Scan your meal</h1>
         <p className="text-sm text-muted-foreground">
-          Snap a photo — Gemini vision identifies foods, portions, and nutrients in seconds.
+          Snap a photo — AI identifies foods, portions, imbalances, and what to add.
         </p>
       </div>
 
       {!preview && (
-        <div
-          onClick={() => inputRef.current?.click()}
-          className="glass-strong flex cursor-pointer flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed border-primary/40 p-16 transition hover:border-primary hover:glow-neon"
-        >
-          <div className="rounded-full bg-primary/15 p-5">
-            <Camera className="h-8 w-8 text-primary" />
+        <div className="glass-strong rounded-3xl border-2 border-dashed border-primary/40 p-8 sm:p-12">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="rounded-full bg-primary/15 p-5">
+              <Camera className="h-8 w-8 text-primary" />
+            </div>
+            <div>
+              <div className="font-display text-lg font-semibold">Capture your meal</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Auto-compressed for fast upload · works on any phone
+              </div>
+            </div>
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
+              <button
+                type="button"
+                onClick={() => cameraRef.current?.click()}
+                className="flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground glow-neon"
+              >
+                <Camera className="h-4 w-4" /> Take photo
+              </button>
+              <button
+                type="button"
+                onClick={() => galleryRef.current?.click()}
+                className="flex items-center justify-center gap-2 rounded-full border border-border px-6 py-3 text-sm"
+              >
+                <Upload className="h-4 w-4" /> Choose from gallery
+              </button>
+            </div>
+            <input
+              ref={cameraRef}
+              type="file" accept="image/*" capture="environment"
+              hidden
+              onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
+            />
+            <input
+              ref={galleryRef}
+              type="file" accept="image/*"
+              hidden
+              onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
+            />
           </div>
-          <div className="text-center">
-            <div className="font-display text-lg font-semibold">Tap to capture or upload</div>
-            <div className="mt-1 text-xs text-muted-foreground">JPG or PNG · &lt; 10MB</div>
-          </div>
-          <input
-            ref={inputRef}
-            type="file" accept="image/*" capture="environment"
-            hidden
-            onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
-          />
         </div>
       )}
 
@@ -154,6 +219,99 @@ function Scan() {
               </div>
             ))}
           </div>
+
+          {result.imbalances?.length > 0 && (
+            <div className="glass rounded-3xl p-5">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-warning">
+                <AlertCircle className="h-4 w-4" /> Nutritional imbalances
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {result.imbalances.map((im, i) => (
+                  <div key={i} className="rounded-2xl border border-border/60 p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm font-semibold">
+                        {im.status === "low" ? (
+                          <TrendingDown className="h-4 w-4 text-warning" />
+                        ) : (
+                          <TrendingUp className="h-4 w-4 text-destructive" />
+                        )}
+                        {im.nutrient}
+                      </div>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase ${
+                        im.severity === "severe"
+                          ? "bg-destructive/20 text-destructive"
+                          : im.severity === "moderate"
+                          ? "bg-warning/20 text-warning"
+                          : "bg-muted text-muted-foreground"
+                      }`}>
+                        {im.severity} · {im.status}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">{im.explanation}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {result.add_to_this_meal?.length > 0 && (
+            <div className="glass rounded-3xl border border-primary/30 p-5">
+              <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-primary">
+                <Plus className="h-4 w-4" /> Add to THIS meal to balance it
+              </div>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Tap to log an item onto your current plate.
+              </p>
+              <div className="space-y-2">
+                {result.add_to_this_meal.map((it, i) => {
+                  const key = `now-${i}-${it.name}`;
+                  const added = addedKeys.has(key);
+                  return (
+                    <div key={key} className="flex items-start justify-between gap-3 rounded-2xl border border-border/60 p-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-sm">{it.name} <span className="text-muted-foreground font-normal">· {it.amount}</span></div>
+                        <div className="text-xs text-muted-foreground">Fixes: {it.fixes}</div>
+                        {it.calories > 0 && (
+                          <div className="mt-0.5 text-[10px] text-muted-foreground">+{Math.round(it.calories)} kcal</div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => addToCurrentMeal(it, key)}
+                        disabled={added || addingKey === key || !mealId}
+                        className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${
+                          added
+                            ? "bg-primary/20 text-primary"
+                            : "bg-primary text-primary-foreground glow-neon"
+                        } disabled:opacity-60`}
+                      >
+                        {added ? (<><Check className="mr-1 inline h-3 w-3" />Added</>) :
+                         addingKey === key ? "Adding…" : (<><Plus className="mr-1 inline h-3 w-3" />Add</>)}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {result.add_to_next_meal?.length > 0 && (
+            <div className="glass rounded-3xl p-5">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-accent">
+                <Clock className="h-4 w-4" /> Add to your NEXT meal
+              </div>
+              <div className="space-y-2">
+                {result.add_to_next_meal.map((it, i) => (
+                  <div key={i} className="rounded-2xl border border-border/60 p-3">
+                    <div className="text-sm font-semibold">{it.name} <span className="text-muted-foreground font-normal">· {it.amount}</span></div>
+                    <div className="text-xs text-muted-foreground">Fixes: {it.fixes}</div>
+                    {it.calories > 0 && (
+                      <div className="mt-0.5 text-[10px] text-muted-foreground">≈ {Math.round(it.calories)} kcal</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {result.highlights?.length > 0 && (
             <div className="glass rounded-3xl p-5">
