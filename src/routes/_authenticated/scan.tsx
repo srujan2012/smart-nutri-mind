@@ -232,6 +232,54 @@ function Scan() {
             ))}
           </div>
 
+          {result.plate_balance?.length > 0 && (
+            <div className="glass rounded-3xl p-5">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
+                <Sparkles className="h-4 w-4" /> Plate balance
+              </div>
+              <div className="space-y-3">
+                {result.plate_balance.map((b, i) => {
+                  const max = Math.max(b.current, b.target_for_meal, 1);
+                  const pct = Math.min(100, Math.round((b.current / max) * 100));
+                  const tone = b.status === "high" ? "bg-destructive" : b.status === "low" ? "bg-warning" : "bg-primary";
+                  return (
+                    <div key={i} className="rounded-2xl border border-border/60 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold">{b.nutrient}</div>
+                          <div className="text-xs text-muted-foreground">{b.explanation}</div>
+                        </div>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase ${
+                          b.status === "high" ? "bg-destructive/20 text-destructive" : b.status === "low" ? "bg-warning/20 text-warning" : "bg-primary/15 text-primary"
+                        }`}>
+                          {b.status}
+                        </span>
+                      </div>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                        <div className={`h-full rounded-full ${tone}`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                        <span>{Math.round(b.current)} now</span>
+                        <span>{Math.round(b.target_for_meal)} target · gap {Math.round(Math.abs(b.gap))}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {result.water_recommendation_ml && (
+            <div className="glass rounded-3xl p-5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-accent">
+                <Droplets className="h-4 w-4" /> Water recommendation
+              </div>
+              <div className="mt-2 text-sm text-muted-foreground">
+                Target today: <span className="font-mono text-foreground">{result.water_recommendation_ml} ml</span>. If this meal is salty or high-protein, add 300–500 ml over the next hour.
+              </div>
+            </div>
+          )}
+
           {result.imbalances?.length > 0 && (
             <div className="glass rounded-3xl p-5">
               <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-warning">
