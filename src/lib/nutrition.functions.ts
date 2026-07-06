@@ -41,6 +41,76 @@ function extractJson(s: string): unknown {
   return JSON.parse(raw);
 }
 
+type MacroTotals = {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+};
+
+const emptyTotals: MacroTotals = { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
+
+function addTotals<T extends Partial<MacroTotals>>(rows: T[] | null | undefined): MacroTotals {
+  return (rows ?? []).reduce(
+    (a, m) => ({
+      calories: a.calories + Number(m.calories ?? 0),
+      protein: a.protein + Number(m.protein ?? 0),
+      carbs: a.carbs + Number(m.carbs ?? 0),
+      fat: a.fat + Number(m.fat ?? 0),
+      fiber: a.fiber + Number(m.fiber ?? 0),
+    }),
+    { ...emptyTotals },
+  );
+}
+
+function profileTargets(profile: {
+  calorie_target?: number | null;
+  protein_target?: number | null;
+  carbs_target?: number | null;
+  fat_target?: number | null;
+  fiber_target?: number | null;
+  weight_kg?: number | null;
+} | null): MacroTotals & { water_ml: number } {
+  return {
+    calories: Number(profile?.calorie_target ?? 2000),
+    protein: Number(profile?.protein_target ?? 100),
+    carbs: Number(profile?.carbs_target ?? 250),
+    fat: Number(profile?.fat_target ?? 70),
+    fiber: Number(profile?.fiber_target ?? 30),
+    water_ml: Math.round(Number(profile?.weight_kg ?? 70) * 35),
+  };
+}
+
+function remainingFrom(targets: MacroTotals, consumed: MacroTotals): MacroTotals {
+  return {
+    calories: Math.max(0, targets.calories - consumed.calories),
+    protein: Math.max(0, targets.protein - consumed.protein),
+    carbs: Math.max(0, targets.carbs - consumed.carbs),
+    fat: Math.max(0, targets.fat - consumed.fat),
+    fiber: Math.max(0, targets.fiber - consumed.fiber),
+  };
+}
+
+const AddOnSchema = z.object({
+  name: z.string(),
+  amount: z.string(),
+  fixes: z.string(),
+  nutrients_balanced: z.array(z.string()).default([]),
+  calories: z.number().default(0),
+  protein: z.number().default(0),
+  carbs: z.number().default(0),
+  fat: z.number().default(0),
+  fiber: z.number().default(0),
+});
+
+const GrocerySuggestionSchema = z.object({
+  name: z.string(),
+  amount: z.string().default(""),
+  reason: z.string().default("Supports today's nutrition gaps"),
+  nutrients: z.array(z.string()).default([]),
+});
+
 const MealAnalysisSchema = z.object({
   name: z.string(),
   foods: z.array(
