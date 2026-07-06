@@ -138,22 +138,18 @@ const MealAnalysisSchema = z.object({
       explanation: z.string(),
     }),
   ).default([]),
-  add_to_this_meal: z.array(
+  plate_balance: z.array(
     z.object({
-      name: z.string(),
-      amount: z.string(),
-      fixes: z.string(),
-      calories: z.number().default(0),
+      nutrient: z.string(),
+      current: z.number(),
+      target_for_meal: z.number(),
+      status: z.enum(["low", "balanced", "high"]),
+      gap: z.number(),
+      explanation: z.string(),
     }),
   ).default([]),
-  add_to_next_meal: z.array(
-    z.object({
-      name: z.string(),
-      amount: z.string(),
-      fixes: z.string(),
-      calories: z.number().default(0),
-    }),
-  ).default([]),
+  add_to_this_meal: z.array(AddOnSchema).default([]),
+  add_to_next_meal: z.array(AddOnSchema.extend({ prevents_gap: z.string().default("") })).default([]),
   recommendations: z.array(
     z.object({
       nutrient: z.string(),
