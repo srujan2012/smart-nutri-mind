@@ -335,27 +335,37 @@ export const generateMealPlan = createServerFn({ method: "POST" })
     today.setHours(0, 0, 0, 0);
     const { data: meals } = await context.supabase
       .from("meals")
-      .select("name, calories, protein, fiber")
+      .select("name, calories, protein, carbs, fat, fiber")
       .eq("user_id", context.userId)
       .gte("consumed_at", today.toISOString());
+    const { data: latestPantry } = await context.supabase
+      .from("pantry_scans")
+      .select("items, missing_staples, meal_ideas, best_pick, created_at")
+      .eq("user_id", context.userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const { data: groceries } = await context.supabase
+      .from("grocery_items")
+      .select("name, amount, reason, source, checked")
+      .eq("user_id", context.userId)
+      .eq("checked", false)
+      .order("created_at", { ascending: false })
+      .limit(40);
 
-    const consumed = (meals ?? []).reduce(
-      (a, m) => ({
-        calories: a.calories + Number(m.calories ?? 0),
-        protein: a.protein + Number(m.protein ?? 0),
-        fiber: a.fiber + Number(m.fiber ?? 0),
-      }),
-      { calories: 0, protein: 0, fiber: 0 },
-    );
+    const consumed = addTotals(meals);
+    const targets = profileTargets(profile);
+    const remaining = remainingFrom(targets, consumed);
+    const pantryText = latestPantry
+      ? `Latest fridge scan: visible items ${JSON.stringify(latestPantry.items).slice(0, 1200)}. Fridge recipe ideas ${JSON.stringify(latestPantry.meal_ideas).slice(0, 1600)}. Missing ingredients ${JSON.stringify(latestPantry.missing_staples).slice(0, 900)}.`
+      : "No fridge scan yet.";
+    const groceryText = (groceries ?? []).length
+      ? `Current grocery list: ${JSON.stringify(groceries).slice(0, 1200)}.`
+      : "No open grocery list items.";
 
-    const remaining = {
-      calories: Math.max(0, (profile.calorie_target ?? 2000) - consumed.calories),
-      protein: Math.max(0, (profile.protein_target ?? 100) - consumed.protein),
-      fiber: Math.max(0, (profile.fiber_target ?? 30) - consumed.fiber),
-    };
-
-    const system = `You are a meal planning AI. Generate a personalized meal plan for the remaining meals of today that fills these gaps: ${remaining.calories.toFixed(0)}kcal, ${remaining.protein.toFixed(0)}g protein, ${remaining.fiber.toFixed(0)}g fiber. Respect diet: ${profile.food_preference}. Country: ${profile.country}. Budget: ${profile.daily_budget}. Conditions: ${(profile.conditions ?? []).join(", ") || "none"}. Return ONLY JSON:
-{"meals":[{"slot":"Lunch"|"Snack"|"Dinner"|"Post-workout","name":string,"why":string,"ingredients":[{"name":string,"amount":string}],"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number,"prep_minutes":number,"est_cost":number,"instructions":string}]}`;
+    const system = `You are a meal planning AI. Generate a personalized plan for the remaining meals of today. Fill these remaining gaps: ${remaining.calories.toFixed(0)}kcal, ${remaining.protein.toFixed(0)}g protein, ${remaining.carbs.toFixed(0)}g carbs, ${remaining.fat.toFixed(0)}g healthy fats, ${remaining.fiber.toFixed(0)}g fiber. Water target: ${targets.water_ml}ml/day. Respect diet: ${profile.food_preference}. Country: ${profile.country}. Budget: ${profile.daily_budget}. Goal: ${profile.goal}. Activity: ${profile.activity_level}. Conditions: ${(profile.conditions ?? []).join(", ") || "none"}. ${pantryText} ${groceryText}
+Use fridge ingredients first. Prefer recipes from the latest fridge scan when they fit the gaps. If something is missing, add it to grocery items. Include meal timing and recovery nutrition when relevant. Return ONLY JSON:
+{"meals":[{"slot":"Lunch"|"Snack"|"Dinner"|"Post-workout","name":string,"why":string,"gap_coverage":[string],"meal_timing":string,"recovery_note":string,"ingredients":[{"name":string,"amount":string}],"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number,"prep_minutes":number,"est_cost":number,"instructions":string}],"next_meal_recommendations":[{"name":string,"amount":string,"fixes":string,"prevents_gap":string,"nutrients_balanced":[string],"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number}],"grocery_items":[{"name":string,"amount":string,"reason":string,"nutrients":[string]}]}`;
 
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
@@ -364,21 +374,44 @@ export const generateMealPlan = createServerFn({ method: "POST" })
         { role: "user", content: "Plan the rest of my day." },
       ],
     });
-    return extractJson(content) as {
-      meals: Array<{
-        slot: string;
-        name: string;
-        why: string;
-        ingredients: { name: string; amount: string }[];
-        calories: number;
-        protein: number;
-        carbs: number;
-        fat: number;
-        fiber: number;
-        prep_minutes: number;
-        est_cost: number;
-        instructions: string;
-      }>;
+    const parsed = z.object({
+      meals: z.array(z.object({
+        slot: z.string(),
+        name: z.string(),
+        why: z.string(),
+        gap_coverage: z.array(z.string()).default([]),
+        meal_timing: z.string().default("Best as your next main meal."),
+        recovery_note: z.string().default(""),
+        ingredients: z.array(z.object({ name: z.string(), amount: z.string() })),
+        calories: z.number(),
+        protein: z.number(),
+        carbs: z.number(),
+        fat: z.number(),
+        fiber: z.number(),
+        prep_minutes: z.number(),
+        est_cost: z.number(),
+        instructions: z.string(),
+      })),
+      next_meal_recommendations: z.array(AddOnSchema.extend({ prevents_gap: z.string().default("") })).default([]),
+      grocery_items: z.array(GrocerySuggestionSchema).default([]),
+    }).parse(extractJson(content));
+
+    const groceryRows = parsed.grocery_items.slice(0, 24).map((item) => ({
+      user_id: context.userId,
+      name: item.name,
+      amount: item.amount,
+      reason: `${item.reason}${item.nutrients.length ? ` · Nutrients: ${item.nutrients.join(", ")}` : ""}`,
+      source: "planner",
+    }));
+    if (groceryRows.length > 0) {
+      await context.supabase.from("grocery_items").insert(groceryRows);
+    }
+
+    return {
+      ...parsed,
+      remaining,
+      daily_targets: targets,
+      pantry_available: latestPantry?.items ?? [],
     };
   });
 
