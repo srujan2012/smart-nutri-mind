@@ -503,14 +503,15 @@ const FridgeScanSchema = z.object({
       freshness: z.enum(["fresh", "use-soon", "check"]).default("fresh"),
     }),
   ),
-  missing_staples: z.array(z.string()).default([]),
+  missing_staples: z.array(z.union([z.string(), GrocerySuggestionSchema])).default([]),
   meal_ideas: z.array(
     z.object({
       name: z.string(),
       slot: z.enum(["breakfast", "lunch", "dinner", "snack"]),
       uses: z.array(z.string()),
-      needs: z.array(z.string()).default([]),
+      needs: z.array(z.union([z.string(), GrocerySuggestionSchema])).default([]),
       why: z.string(),
+      gap_coverage: z.array(z.string()).default([]),
       calories: z.number(),
       protein: z.number(),
       carbs: z.number(),
@@ -521,6 +522,7 @@ const FridgeScanSchema = z.object({
       fits_goal_score: z.number().min(0).max(100),
     }),
   ),
+  grocery_items: z.array(GrocerySuggestionSchema).default([]),
   best_pick: z.string().optional(),
 });
 
@@ -547,37 +549,26 @@ export const scanFridge = createServerFn({ method: "POST" })
     today.setHours(0, 0, 0, 0);
     const { data: meals } = await context.supabase
       .from("meals")
-      .select("calories, protein, fiber")
+      .select("calories, protein, carbs, fat, fiber")
       .eq("user_id", context.userId)
       .gte("consumed_at", today.toISOString());
-    const consumed = (meals ?? []).reduce(
-      (a, m) => ({
-        calories: a.calories + Number(m.calories ?? 0),
-        protein: a.protein + Number(m.protein ?? 0),
-        fiber: a.fiber + Number(m.fiber ?? 0),
-      }),
-      { calories: 0, protein: 0, fiber: 0 },
-    );
-    const remaining = profile
-      ? {
-          calories: Math.max(0, (profile.calorie_target ?? 2000) - consumed.calories),
-          protein: Math.max(0, (profile.protein_target ?? 100) - consumed.protein),
-          fiber: Math.max(0, (profile.fiber_target ?? 30) - consumed.fiber),
-        }
-      : { calories: 2000, protein: 100, fiber: 30 };
+    const consumed = addTotals(meals);
+    const targets = profileTargets(profile);
+    const remaining = remainingFrom(targets, consumed);
 
     const profileCtx = profile
-      ? `Diet: ${profile.food_preference}. Goal: ${profile.goal}. Conditions: ${(profile.conditions ?? []).join(", ") || "none"}. Country: ${profile.country}. Remaining today: ${remaining.calories.toFixed(0)}kcal, ${remaining.protein.toFixed(0)}g protein, ${remaining.fiber.toFixed(0)}g fiber.`
+      ? `Diet: ${profile.food_preference}. Goal: ${profile.goal}. Conditions: ${(profile.conditions ?? []).join(", ") || "none"}. Country: ${profile.country}. Remaining today: ${remaining.calories.toFixed(0)}kcal, ${remaining.protein.toFixed(0)}g protein, ${remaining.carbs.toFixed(0)}g carbs, ${remaining.fat.toFixed(0)}g healthy fats, ${remaining.fiber.toFixed(0)}g fiber. Water target: ${targets.water_ml}ml/day.`
       : "";
 
     const system = `You are NutriMind Pantry Vision. Look at this photo of a refrigerator, pantry, or grocery haul. Identify every visible food ingredient, then propose meals the user can cook using ONLY (or mostly) those ingredients — tuned to their profile and today's remaining nutrition targets. Return ONLY JSON:
 {
   "items": [{"name": string, "category": "produce"|"dairy"|"protein"|"grain"|"condiment"|"beverage"|"other", "freshness": "fresh"|"use-soon"|"check"}],
-  "missing_staples": [string] — pantry basics that would unlock more meals if bought,
-  "meal_ideas": [{"name": string, "slot": "breakfast"|"lunch"|"dinner"|"snack", "uses": [string], "needs": [string] (only if truly required), "why": string (1 sentence tying to user's goal / remaining targets), "calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number, "prep_minutes": number, "instructions": string (3-5 short steps, joined with " • "), "fits_goal_score": 0-100}],
+  "missing_staples": [{"name": string, "amount": string, "reason": string, "nutrients": [string]}] — pantry basics that would unlock more meals and close nutrition gaps,
+  "meal_ideas": [{"name": string, "slot": "breakfast"|"lunch"|"dinner"|"snack", "uses": [string], "needs": [{"name": string, "amount": string, "reason": string, "nutrients": [string]}] (only if truly required), "why": string (1 sentence tying to user's goal / remaining targets), "gap_coverage": [string] (daily calories, protein requirements, carbohydrates, healthy fats, fiber, water, meal timing, recovery nutrition covered), "calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number, "prep_minutes": number, "instructions": string (3-5 short steps, joined with " • "), "fits_goal_score": 0-100}],
+  "grocery_items": [{"name": string, "amount": string, "reason": string, "nutrients": [string]}],
   "best_pick": string (name of the single best meal_idea for right now)
 }
-Give 3-5 meal ideas, ranked best first. ${profileCtx}${data.note ? ` Note: ${data.note}` : ""}`;
+Give 3-5 meal ideas, ranked best first. If a recipe cannot fill a required nutrition portion with visible fridge items, put the required ingredient in both meal_ideas[].needs and grocery_items, with exact nutrients it fixes. ${profileCtx}${data.note ? ` Note: ${data.note}` : ""}`;
 
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
@@ -593,6 +584,59 @@ Give 3-5 meal ideas, ranked best first. ${profileCtx}${data.note ? ` Note: ${dat
       ],
     });
 
-    return FridgeScanSchema.parse(extractJson(content));
+    const parsed = FridgeScanSchema.parse(extractJson(content));
+    const normalizedMissing = parsed.missing_staples.map((item) =>
+      typeof item === "string"
+        ? { name: item, amount: "", reason: "Unlocks more balanced fridge meals", nutrients: [] }
+        : item,
+    );
+    const normalizedMeals = parsed.meal_ideas.map((meal) => ({
+      ...meal,
+      needs: meal.needs.map((item) =>
+        typeof item === "string"
+          ? { name: item, amount: "", reason: "Required to complete this recipe", nutrients: [] }
+          : item,
+      ),
+    }));
+    const groceryByName = new Map<string, z.infer<typeof GrocerySuggestionSchema>>();
+    [...normalizedMissing, ...parsed.grocery_items, ...normalizedMeals.flatMap((m) => m.needs)].forEach((item) => {
+      if (!item.name) return;
+      groceryByName.set(item.name.toLowerCase(), item);
+    });
+    const groceryRows = Array.from(groceryByName.values()).slice(0, 30).map((item) => ({
+      user_id: context.userId,
+      name: item.name,
+      amount: item.amount,
+      reason: `${item.reason}${item.nutrients.length ? ` · Nutrients: ${item.nutrients.join(", ")}` : ""}`,
+      source: "fridge",
+    }));
+
+    const { data: saved, error: saveError } = await context.supabase
+      .from("pantry_scans")
+      .insert({
+        user_id: context.userId,
+        items: parsed.items,
+        missing_staples: normalizedMissing,
+        meal_ideas: normalizedMeals,
+        best_pick: parsed.best_pick ?? null,
+        note: data.note ?? null,
+      })
+      .select("id")
+      .single();
+    if (saveError) throw new Error(saveError.message);
+
+    if (groceryRows.length > 0) {
+      await context.supabase.from("grocery_items").insert(groceryRows);
+    }
+
+    return {
+      ...parsed,
+      id: saved.id,
+      missing_staples: normalizedMissing,
+      meal_ideas: normalizedMeals,
+      grocery_items: Array.from(groceryByName.values()),
+      remaining,
+      daily_targets: targets,
+    };
   });
 
