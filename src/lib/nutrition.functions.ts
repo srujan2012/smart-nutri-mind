@@ -426,6 +426,10 @@ export const addToMeal = createServerFn({ method: "POST" })
           name: z.string(),
           amount: z.string(),
           calories: z.number().default(0),
+          protein: z.number().default(0),
+          carbs: z.number().default(0),
+          fat: z.number().default(0),
+          fiber: z.number().default(0),
         }),
       })
       .parse(i),
@@ -440,21 +444,33 @@ export const addToMeal = createServerFn({ method: "POST" })
     if (readErr) throw new Error(readErr.message);
     if (!meal) throw new Error("Meal not found");
 
-    // Ask AI for macro estimate of the added item
-    const content = await callGateway({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        {
-          role: "system",
-          content:
-            'Estimate nutrition for a single food item. Return ONLY JSON: {"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number}',
-        },
-        { role: "user", content: `${data.item.amount} ${data.item.name}` },
-      ],
-    });
-    const macros = extractJson(content) as {
-      calories: number; protein: number; carbs: number; fat: number; fiber: number;
+    let macros: MacroTotals = {
+      calories: data.item.calories,
+      protein: data.item.protein,
+      carbs: data.item.carbs,
+      fat: data.item.fat,
+      fiber: data.item.fiber,
     };
+    if (!macros.calories && !macros.protein && !macros.carbs && !macros.fat && !macros.fiber) {
+      const content = await callGateway({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content:
+              'Estimate nutrition for a single food item. Return ONLY JSON: {"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number}',
+          },
+          { role: "user", content: `${data.item.amount} ${data.item.name}` },
+        ],
+      });
+      macros = z.object({
+        calories: z.number(),
+        protein: z.number(),
+        carbs: z.number(),
+        fat: z.number(),
+        fiber: z.number(),
+      }).parse(extractJson(content));
+    }
 
     const foods = Array.isArray(meal.foods) ? meal.foods : [];
     const updatedFoods = [
