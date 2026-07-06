@@ -29,15 +29,21 @@ function fit(w: number, h: number, max: number) {
 
 function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
+    if (!file.type.startsWith("image/")) {
+      reject(new Error("Choose a meal photo, not a document"));
+      return;
+    }
+
     const url = URL.createObjectURL(file);
     const img = new Image();
+    img.decoding = "async";
     img.onload = () => {
       URL.revokeObjectURL(url);
       resolve(img);
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error("Could not read image"));
+      reject(new Error("Could not read this image. On iPhone, set Camera format to Most Compatible or pick a JPEG/PNG."));
     };
     img.src = url;
   });

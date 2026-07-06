@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { scanFridge } from "@/lib/nutrition.functions";
 import { fileToCompressedDataUrl } from "@/lib/image-compress";
 import {
-  Refrigerator, Camera, Upload, Sparkles, ShoppingCart, ChefHat, Clock, Flame, Star,
+  Refrigerator, Camera, Upload, Sparkles, ShoppingCart, ChefHat, Clock, Flame, Star, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,6 +13,12 @@ export const Route = createFileRoute("/_authenticated/fridge")({
 });
 
 type Scan = Awaited<ReturnType<typeof scanFridge>>;
+type GroceryItem = { name: string; amount?: string; reason?: string; nutrients?: string[] };
+
+function groceryLabel(item: string | GroceryItem) {
+  if (typeof item === "string") return item;
+  return [item.name, item.amount].filter(Boolean).join(" · ");
+}
 
 function Fridge() {
   const scan = useServerFn(scanFridge);
@@ -39,7 +45,7 @@ function Fridge() {
     try {
       const r = await scan({ data: { imageDataUrl: preview, note } });
       setResult(r);
-      toast.success("Pantry analyzed");
+      toast.success("Fridge scanned, planner and grocery list updated");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Scan failed");
     } finally {
@@ -146,14 +152,24 @@ function Fridge() {
             </div>
           </div>
 
-          {result.missing_staples?.length > 0 && (
+          {result.grocery_items?.length > 0 && (
             <div className="glass rounded-3xl p-5">
               <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-accent">
-                <ShoppingCart className="h-4 w-4" /> Would unlock more meals
+                <ShoppingCart className="h-4 w-4" /> Added to grocery list
               </div>
-              <div className="flex flex-wrap gap-2">
-                {result.missing_staples.map((s, i) => (
-                  <span key={i} className="rounded-full border border-border px-3 py-1 text-xs">{s}</span>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {result.grocery_items.map((s, i) => (
+                  <div key={i} className="rounded-2xl border border-border/60 p-3 text-xs">
+                    <div className="flex items-center gap-1 font-semibold">
+                      <CheckCircle2 className="h-3 w-3 text-primary" /> {groceryLabel(s)}
+                    </div>
+                    {typeof s !== "string" && s.reason && (
+                      <div className="mt-1 text-muted-foreground">{s.reason}</div>
+                    )}
+                    {typeof s !== "string" && s.nutrients?.length ? (
+                      <div className="mt-1 text-[10px] text-accent">Balances {s.nutrients.join(", ")}</div>
+                    ) : null}
+                  </div>
                 ))}
               </div>
             </div>
@@ -212,9 +228,25 @@ function Fridge() {
                     {m.needs?.length > 0 && (
                       <div className="mt-2">
                         <div className="text-[10px] uppercase text-warning">Also needs</div>
-                        <div className="mt-1 flex flex-wrap gap-1">
+                        <div className="mt-1 grid gap-1 sm:grid-cols-2">
                           {m.needs.map((u, j) => (
-                            <span key={j} className="rounded-full bg-warning/10 px-2 py-0.5 text-[11px] text-warning">{u}</span>
+                            <div key={j} className="rounded-xl bg-warning/10 px-2 py-1 text-[11px] text-warning">
+                              <div>{groceryLabel(u)}</div>
+                              {typeof u !== "string" && u.nutrients?.length ? (
+                                <div className="text-[10px] text-muted-foreground">Fills {u.nutrients.join(", ")}</div>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {m.gap_coverage?.length > 0 && (
+                      <div className="mt-2">
+                        <div className="text-[10px] uppercase text-accent">Nutrition gaps covered</div>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {m.gap_coverage.map((g, j) => (
+                            <span key={j} className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] text-accent">{g}</span>
                           ))}
                         </div>
                       </div>

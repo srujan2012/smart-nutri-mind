@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      grocery_items: {
+        Row: {
+          amount: string | null
+          checked: boolean
+          created_at: string
+          id: string
+          name: string
+          reason: string | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: string | null
+          checked?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          reason?: string | null
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: string | null
+          checked?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          reason?: string | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meals: {
         Row: {
           analysis: Json
@@ -67,6 +103,42 @@ export type Database = {
           micros?: Json
           name?: string
           protein?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pantry_scans: {
+        Row: {
+          best_pick: string | null
+          created_at: string
+          id: string
+          items: Json
+          meal_ideas: Json
+          missing_staples: Json
+          note: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          best_pick?: string | null
+          created_at?: string
+          id?: string
+          items?: Json
+          meal_ideas?: Json
+          missing_staples?: Json
+          note?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          best_pick?: string | null
+          created_at?: string
+          id?: string
+          items?: Json
+          meal_ideas?: Json
+          missing_staples?: Json
+          note?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Sparkles, Mail, Lock, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [{ title: "Sign in — NutriMind AI" }],
   }),

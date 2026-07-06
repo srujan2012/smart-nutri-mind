@@ -3,10 +3,9 @@ import { useState, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeMeal, addToMeal } from "@/lib/nutrition.functions";
 import { fileToCompressedDataUrl } from "@/lib/image-compress";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Camera, Upload, Sparkles, ArrowRight, AlertCircle, CheckCircle2,
-  Lightbulb, Plus, TrendingDown, TrendingUp, Clock, Check,
+  Lightbulb, Plus, TrendingDown, TrendingUp, Clock, Check, Droplets,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,12 +24,14 @@ function Scan() {
   const [preview, setPreview] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [result, setResult] = useState<Analysis | null>(null);
   const [mealId, setMealId] = useState<string | null>(null);
   const [addedKeys, setAddedKeys] = useState<Set<string>>(new Set());
   const [addingKey, setAddingKey] = useState<string | null>(null);
 
   const onFile = async (file: File) => {
+    setPreparing(true);
     try {
       const dataUrl = await fileToCompressedDataUrl(file, { maxSize: 1280, quality: 0.82 });
       setPreview(dataUrl);
@@ -39,6 +40,10 @@ function Scan() {
       setAddedKeys(new Set());
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not read image");
+    } finally {
+      setPreparing(false);
+      if (cameraRef.current) cameraRef.current.value = "";
+      if (galleryRef.current) galleryRef.current.value = "";
     }
   };
 
@@ -48,14 +53,7 @@ function Scan() {
     try {
       const r = await analyze({ data: { imageDataUrl: preview, note } });
       setResult(r);
-      // grab the just-inserted meal id so we can add items to it
-      const { data: latest } = await supabase
-        .from("meals")
-        .select("id")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (latest) setMealId(latest.id);
+      setMealId(r.meal_id);
       toast.success("Meal analyzed & logged");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Analysis failed");
@@ -65,7 +63,7 @@ function Scan() {
   };
 
   const addToCurrentMeal = async (
-    item: { name: string; amount: string; calories: number },
+    item: { name: string; amount: string; calories: number; protein?: number; carbs?: number; fat?: number; fiber?: number },
     key: string,
   ) => {
     if (!mealId) return toast.error("Meal not saved yet");
@@ -106,9 +104,15 @@ function Scan() {
             <div>
               <div className="font-display text-lg font-semibold">Capture your meal</div>
               <div className="mt-1 text-xs text-muted-foreground">
-                Auto-compressed for fast upload · works on any phone
+                Best for meal scanning: rear camera, full plate in frame, bright light
               </div>
             </div>
+            {preparing && (
+              <div className="flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs text-accent">
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                Compressing photo for phone upload…
+              </div>
+            )}
             <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
               <button
                 type="button"
@@ -137,6 +141,14 @@ function Scan() {
               hidden
               onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
             />
+          </div>
+          <div className="mt-5 rounded-2xl border border-border/60 bg-background/30 p-4 text-left text-xs text-muted-foreground">
+            <div className="mb-2 font-semibold text-foreground">Best scan setup</div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div>1. Use the rear camera and keep the full plate visible.</div>
+              <div>2. Avoid shadows, blur, and extreme close-ups.</div>
+              <div>3. Add a note for oils, sauces, or hidden ingredients.</div>
+            </div>
           </div>
         </div>
       )}
@@ -220,6 +232,54 @@ function Scan() {
             ))}
           </div>
 
+          {result.plate_balance?.length > 0 && (
+            <div className="glass rounded-3xl p-5">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
+                <Sparkles className="h-4 w-4" /> Plate balance
+              </div>
+              <div className="space-y-3">
+                {result.plate_balance.map((b, i) => {
+                  const max = Math.max(b.current, b.target_for_meal, 1);
+                  const pct = Math.min(100, Math.round((b.current / max) * 100));
+                  const tone = b.status === "high" ? "bg-destructive" : b.status === "low" ? "bg-warning" : "bg-primary";
+                  return (
+                    <div key={i} className="rounded-2xl border border-border/60 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold">{b.nutrient}</div>
+                          <div className="text-xs text-muted-foreground">{b.explanation}</div>
+                        </div>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase ${
+                          b.status === "high" ? "bg-destructive/20 text-destructive" : b.status === "low" ? "bg-warning/20 text-warning" : "bg-primary/15 text-primary"
+                        }`}>
+                          {b.status}
+                        </span>
+                      </div>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                        <div className={`h-full rounded-full ${tone}`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                        <span>{Math.round(b.current)} now</span>
+                        <span>{Math.round(b.target_for_meal)} target · gap {Math.round(Math.abs(b.gap))}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {result.water_recommendation_ml && (
+            <div className="glass rounded-3xl p-5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-accent">
+                <Droplets className="h-4 w-4" /> Water recommendation
+              </div>
+              <div className="mt-2 text-sm text-muted-foreground">
+                Target today: <span className="font-mono text-foreground">{result.water_recommendation_ml} ml</span>. If this meal is salty or high-protein, add 300–500 ml over the next hour.
+              </div>
+            </div>
+          )}
+
           {result.imbalances?.length > 0 && (
             <div className="glass rounded-3xl p-5">
               <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-warning">
@@ -271,8 +331,17 @@ function Scan() {
                       <div className="min-w-0 flex-1">
                         <div className="font-semibold text-sm">{it.name} <span className="text-muted-foreground font-normal">· {it.amount}</span></div>
                         <div className="text-xs text-muted-foreground">Fixes: {it.fixes}</div>
+                        {it.nutrients_balanced?.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {it.nutrients_balanced.map((n) => (
+                              <span key={n} className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] text-accent">{n}</span>
+                            ))}
+                          </div>
+                        )}
                         {it.calories > 0 && (
-                          <div className="mt-0.5 text-[10px] text-muted-foreground">+{Math.round(it.calories)} kcal</div>
+                          <div className="mt-0.5 text-[10px] text-muted-foreground">
+                            +{Math.round(it.calories)} kcal · P {Math.round(it.protein ?? 0)}g · C {Math.round(it.carbs ?? 0)}g · F {Math.round(it.fat ?? 0)}g · Fiber {Math.round(it.fiber ?? 0)}g
+                          </div>
                         )}
                       </div>
                       <button
@@ -304,8 +373,20 @@ function Scan() {
                   <div key={i} className="rounded-2xl border border-border/60 p-3">
                     <div className="text-sm font-semibold">{it.name} <span className="text-muted-foreground font-normal">· {it.amount}</span></div>
                     <div className="text-xs text-muted-foreground">Fixes: {it.fixes}</div>
+                      {it.prevents_gap && (
+                        <div className="mt-1 text-xs text-accent">Prevents gap: {it.prevents_gap}</div>
+                      )}
+                      {it.nutrients_balanced?.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {it.nutrients_balanced.map((n) => (
+                            <span key={n} className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] text-accent">{n}</span>
+                          ))}
+                        </div>
+                      )}
                     {it.calories > 0 && (
-                      <div className="mt-0.5 text-[10px] text-muted-foreground">≈ {Math.round(it.calories)} kcal</div>
+                        <div className="mt-0.5 text-[10px] text-muted-foreground">
+                          ≈ {Math.round(it.calories)} kcal · P {Math.round(it.protein ?? 0)}g · C {Math.round(it.carbs ?? 0)}g · F {Math.round(it.fat ?? 0)}g · Fiber {Math.round(it.fiber ?? 0)}g
+                        </div>
                     )}
                   </div>
                 ))}
