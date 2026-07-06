@@ -104,9 +104,15 @@ function Scan() {
             <div>
               <div className="font-display text-lg font-semibold">Capture your meal</div>
               <div className="mt-1 text-xs text-muted-foreground">
-                Auto-compressed for fast upload · works on any phone
+                Best for meal scanning: rear camera, full plate in frame, bright light
               </div>
             </div>
+            {preparing && (
+              <div className="flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs text-accent">
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                Compressing photo for phone upload…
+              </div>
+            )}
             <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
               <button
                 type="button"
@@ -135,6 +141,14 @@ function Scan() {
               hidden
               onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
             />
+          </div>
+          <div className="mt-5 rounded-2xl border border-border/60 bg-background/30 p-4 text-left text-xs text-muted-foreground">
+            <div className="mb-2 font-semibold text-foreground">Best scan setup</div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div>1. Use the rear camera and keep the full plate visible.</div>
+              <div>2. Avoid shadows, blur, and extreme close-ups.</div>
+              <div>3. Add a note for oils, sauces, or hidden ingredients.</div>
+            </div>
           </div>
         </div>
       )}
