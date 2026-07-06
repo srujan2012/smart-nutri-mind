@@ -184,8 +184,19 @@ export const analyzeMeal = createServerFn({ method: "POST" })
       .eq("id", context.userId)
       .maybeSingle();
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const { data: todayMeals } = await context.supabase
+      .from("meals")
+      .select("calories, protein, carbs, fat, fiber")
+      .eq("user_id", context.userId)
+      .gte("consumed_at", today.toISOString());
+    const consumed = addTotals(todayMeals);
+    const targets = profileTargets(profile);
+    const remaining = remainingFrom(targets, consumed);
+
     const profileCtx = profile
-      ? `User profile: age ${profile.age}, ${profile.gender}, ${profile.height_cm}cm, ${profile.weight_kg}kg, diet: ${profile.food_preference}, goal: ${profile.goal}, activity: ${profile.activity_level}, conditions: ${(profile.conditions ?? []).join(", ") || "none"}, targets: ${profile.calorie_target}kcal / ${profile.protein_target}g protein daily.`
+      ? `User profile: age ${profile.age}, ${profile.gender}, ${profile.height_cm}cm, ${profile.weight_kg}kg, diet: ${profile.food_preference}, goal: ${profile.goal}, activity: ${profile.activity_level}, conditions: ${(profile.conditions ?? []).join(", ") || "none"}. Daily targets: ${targets.calories}kcal, ${targets.protein}g protein, ${targets.carbs}g carbs, ${targets.fat}g fat, ${targets.fiber}g fiber, ${targets.water_ml}ml water. Already eaten today: ${consumed.calories.toFixed(0)}kcal, ${consumed.protein.toFixed(0)}g protein, ${consumed.carbs.toFixed(0)}g carbs, ${consumed.fat.toFixed(0)}g fat, ${consumed.fiber.toFixed(0)}g fiber. Remaining before this meal: ${remaining.calories.toFixed(0)}kcal, ${remaining.protein.toFixed(0)}g protein, ${remaining.carbs.toFixed(0)}g carbs, ${remaining.fat.toFixed(0)}g fat, ${remaining.fiber.toFixed(0)}g fiber.`
       : "No profile.";
 
     const system = `You are NutriMind, an expert AI nutritionist. Analyze the meal photo. Estimate portion sizes carefully. Return ONLY JSON matching this schema:
@@ -197,12 +208,13 @@ export const analyzeMeal = createServerFn({ method: "POST" })
   "meal_score": 0-100, "grade": "A"|"B"|"C"|"D"|"F",
   "highlights": [string], "concerns": [string],
   "imbalances": [{"nutrient": string, "status": "low"|"high", "severity": "mild"|"moderate"|"severe", "explanation": string (1 sentence why this is imbalanced for THIS user)}],
-  "add_to_this_meal": [{"name": string (specific food), "amount": string (e.g. '1/2 cup', '30g'), "fixes": string (which imbalance it corrects), "calories": number}] — ONLY items that pair well with the current plate right now (garnish, side, drink, topping). 1-4 items. Empty if meal is already balanced.
-  "add_to_next_meal": [{"name": string, "amount": string, "fixes": string, "calories": number}] — items to eat later today/tomorrow to cover remaining gaps. 1-4 items.
+  "plate_balance": [{"nutrient": "Calories"|"Protein"|"Carbohydrates"|"Healthy fats"|"Fiber"|"Water"|string, "current": number, "target_for_meal": number, "status": "low"|"balanced"|"high", "gap": number, "explanation": string}],
+  "add_to_this_meal": [{"name": string (specific food), "amount": string (e.g. '1/2 cup', '30g'), "fixes": string (which imbalance it corrects), "nutrients_balanced": [string], "calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number}] — ONLY items that pair well with the current plate right now (garnish, side, drink, topping). 1-4 items. Empty if meal is already balanced.
+  "add_to_next_meal": [{"name": string, "amount": string, "fixes": string, "prevents_gap": string (how this prevents daily nutrient gaps), "nutrients_balanced": [string], "calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number}] — items for the NEXT MEAL based on remaining daily targets. 2-5 items.
   "recommendations": [{"nutrient": string, "current": number, "recommended": number, "action": string, "priority": "now"|"next-meal"|"info"}],
   "confidence": 0-1
 }
-Be specific and realistic. For 'add_to_this_meal' suggest things the user can literally add to the plate in front of them (a squeeze of lemon, a sprinkle of seeds, a glass of milk, a side of yogurt). For 'add_to_next_meal' suggest a proper dish or ingredient.
+Be specific and realistic. For 'plate_balance', compare this plate against a sensible single-meal share of daily needs and explain low/high nutrients. Include daily calories, protein requirements, carbohydrates, healthy fats, fiber, water recommendations, meal timing, and recovery nutrition when relevant. For 'add_to_this_meal' suggest things the user can literally add to the plate in front of them (a squeeze of lemon, a sprinkle of seeds, a glass of milk, a side of yogurt) and include exact macros. For 'add_to_next_meal' suggest a proper dish or ingredient that closes the user's remaining daily target gaps and explain what gap it prevents.
 Consider the user's profile when scoring and recommending. ${profileCtx}${data.note ? ` User note: ${data.note}` : ""}`;
 
 
@@ -222,7 +234,7 @@ Consider the user's profile when scoring and recommending. ${profileCtx}${data.n
 
     const parsed = MealAnalysisSchema.parse(extractJson(content));
 
-    const { error } = await context.supabase.from("meals").insert({
+    const { data: inserted, error } = await context.supabase.from("meals").insert({
       user_id: context.userId,
       name: parsed.name,
       foods: parsed.foods,
@@ -238,15 +250,21 @@ Consider the user's profile when scoring and recommending. ${profileCtx}${data.n
         highlights: parsed.highlights,
         concerns: parsed.concerns,
         imbalances: parsed.imbalances,
+        plate_balance: parsed.plate_balance,
         add_to_this_meal: parsed.add_to_this_meal,
         add_to_next_meal: parsed.add_to_next_meal,
         recommendations: parsed.recommendations,
         confidence: parsed.confidence,
       },
 
-    });
+    }).select("id").single();
     if (error) throw new Error(error.message);
-    return parsed;
+    return {
+      ...parsed,
+      meal_id: inserted.id,
+      daily_remaining: remaining,
+      water_recommendation_ml: targets.water_ml,
+    };
   });
 
 // ---------- Chat assistant ----------
