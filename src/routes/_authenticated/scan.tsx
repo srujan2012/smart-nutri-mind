@@ -331,8 +331,17 @@ function Scan() {
                       <div className="min-w-0 flex-1">
                         <div className="font-semibold text-sm">{it.name} <span className="text-muted-foreground font-normal">· {it.amount}</span></div>
                         <div className="text-xs text-muted-foreground">Fixes: {it.fixes}</div>
+                        {it.nutrients_balanced?.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {it.nutrients_balanced.map((n) => (
+                              <span key={n} className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] text-accent">{n}</span>
+                            ))}
+                          </div>
+                        )}
                         {it.calories > 0 && (
-                          <div className="mt-0.5 text-[10px] text-muted-foreground">+{Math.round(it.calories)} kcal</div>
+                          <div className="mt-0.5 text-[10px] text-muted-foreground">
+                            +{Math.round(it.calories)} kcal · P {Math.round(it.protein ?? 0)}g · C {Math.round(it.carbs ?? 0)}g · F {Math.round(it.fat ?? 0)}g · Fiber {Math.round(it.fiber ?? 0)}g
+                          </div>
                         )}
                       </div>
                       <button
@@ -364,8 +373,20 @@ function Scan() {
                   <div key={i} className="rounded-2xl border border-border/60 p-3">
                     <div className="text-sm font-semibold">{it.name} <span className="text-muted-foreground font-normal">· {it.amount}</span></div>
                     <div className="text-xs text-muted-foreground">Fixes: {it.fixes}</div>
+                      {it.prevents_gap && (
+                        <div className="mt-1 text-xs text-accent">Prevents gap: {it.prevents_gap}</div>
+                      )}
+                      {it.nutrients_balanced?.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {it.nutrients_balanced.map((n) => (
+                            <span key={n} className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] text-accent">{n}</span>
+                          ))}
+                        </div>
+                      )}
                     {it.calories > 0 && (
-                      <div className="mt-0.5 text-[10px] text-muted-foreground">≈ {Math.round(it.calories)} kcal</div>
+                        <div className="mt-0.5 text-[10px] text-muted-foreground">
+                          ≈ {Math.round(it.calories)} kcal · P {Math.round(it.protein ?? 0)}g · C {Math.round(it.carbs ?? 0)}g · F {Math.round(it.fat ?? 0)}g · Fiber {Math.round(it.fiber ?? 0)}g
+                        </div>
                     )}
                   </div>
                 ))}
