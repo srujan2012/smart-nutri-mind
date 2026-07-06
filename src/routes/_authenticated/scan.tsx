@@ -3,10 +3,9 @@ import { useState, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeMeal, addToMeal } from "@/lib/nutrition.functions";
 import { fileToCompressedDataUrl } from "@/lib/image-compress";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Camera, Upload, Sparkles, ArrowRight, AlertCircle, CheckCircle2,
-  Lightbulb, Plus, TrendingDown, TrendingUp, Clock, Check,
+  Lightbulb, Plus, TrendingDown, TrendingUp, Clock, Check, Droplets,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,12 +24,14 @@ function Scan() {
   const [preview, setPreview] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [result, setResult] = useState<Analysis | null>(null);
   const [mealId, setMealId] = useState<string | null>(null);
   const [addedKeys, setAddedKeys] = useState<Set<string>>(new Set());
   const [addingKey, setAddingKey] = useState<string | null>(null);
 
   const onFile = async (file: File) => {
+    setPreparing(true);
     try {
       const dataUrl = await fileToCompressedDataUrl(file, { maxSize: 1280, quality: 0.82 });
       setPreview(dataUrl);
@@ -39,6 +40,10 @@ function Scan() {
       setAddedKeys(new Set());
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not read image");
+    } finally {
+      setPreparing(false);
+      if (cameraRef.current) cameraRef.current.value = "";
+      if (galleryRef.current) galleryRef.current.value = "";
     }
   };
 
@@ -48,14 +53,7 @@ function Scan() {
     try {
       const r = await analyze({ data: { imageDataUrl: preview, note } });
       setResult(r);
-      // grab the just-inserted meal id so we can add items to it
-      const { data: latest } = await supabase
-        .from("meals")
-        .select("id")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (latest) setMealId(latest.id);
+      setMealId(r.meal_id);
       toast.success("Meal analyzed & logged");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Analysis failed");
@@ -65,7 +63,7 @@ function Scan() {
   };
 
   const addToCurrentMeal = async (
-    item: { name: string; amount: string; calories: number },
+    item: { name: string; amount: string; calories: number; protein?: number; carbs?: number; fat?: number; fiber?: number },
     key: string,
   ) => {
     if (!mealId) return toast.error("Meal not saved yet");
