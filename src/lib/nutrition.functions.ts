@@ -591,17 +591,18 @@ Give 3-5 meal ideas, ranked best first. If a recipe cannot fill a required nutri
     });
 
     const parsed = FridgeScanSchema.parse(extractJson(content));
+    const emptySugg = { aisle: "Other", substitutes: [] as { name: string; why: string }[] };
     const normalizedMissing = parsed.missing_staples.map((item) =>
       typeof item === "string"
-        ? { name: item, amount: "", reason: "Unlocks more balanced fridge meals", nutrients: [] }
-        : item,
+        ? { name: item, amount: "", reason: "Unlocks more balanced fridge meals", nutrients: [], ...emptySugg }
+        : { ...emptySugg, ...item },
     );
     const normalizedMeals = parsed.meal_ideas.map((meal) => ({
       ...meal,
       needs: meal.needs.map((item) =>
         typeof item === "string"
-          ? { name: item, amount: "", reason: "Required to complete this recipe", nutrients: [] }
-          : item,
+          ? { name: item, amount: "", reason: "Required to complete this recipe", nutrients: [], ...emptySugg }
+          : { ...emptySugg, ...item },
       ),
     }));
     const groceryByName = new Map<string, z.infer<typeof GrocerySuggestionSchema>>();
@@ -615,7 +616,10 @@ Give 3-5 meal ideas, ranked best first. If a recipe cannot fill a required nutri
       amount: item.amount,
       reason: `${item.reason}${item.nutrients.length ? ` · Nutrients: ${item.nutrients.join(", ")}` : ""}`,
       source: "fridge",
+      aisle: item.aisle || "Other",
+      substitutes: item.substitutes ?? [],
     }));
+
 
     const { data: saved, error: saveError } = await context.supabase
       .from("pantry_scans")
