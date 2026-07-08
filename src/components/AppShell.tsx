@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { LogOut, LayoutDashboard, Camera, Refrigerator, ChefHat, MessageSquare, User } from "lucide-react";
+import { LogOut, LayoutDashboard, Camera, Refrigerator, ChefHat, MessageSquare, User, ShoppingCart } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -7,10 +7,12 @@ const nav = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Today" },
   { to: "/scan", icon: Camera, label: "Scan" },
   { to: "/fridge", icon: Refrigerator, label: "Fridge" },
-  { to: "/planner", icon: ChefHat, label: "Planner" },
+  { to: "/planner", icon: ChefHat, label: "Plan" },
+  { to: "/grocery", icon: ShoppingCart, label: "List" },
   { to: "/chat", icon: MessageSquare, label: "Coach" },
-  { to: "/profile", icon: User, label: "Profile" },
+  { to: "/profile", icon: User, label: "Me" },
 ] as const;
+
 
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -64,7 +66,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Mobile nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden glass-strong border-t border-border/60">
-        <div className="grid grid-cols-6">
+        <div className="grid grid-cols-7">
 
           {nav.map((n) => (
             <Link

@@ -194,9 +194,14 @@ function Dashboard() {
 
       {/* Meal timeline */}
       <div>
-        <div className="mb-3 flex items-center gap-2 text-sm font-medium">
-          <TrendingUp className="h-4 w-4 text-primary" /> Today's log
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <TrendingUp className="h-4 w-4 text-primary" /> Today's log
+            <span className="ml-2 text-[10px] uppercase tracking-widest text-muted-foreground">auto-saves · rolls at midnight</span>
+          </div>
+          <Link to="/history" className="text-xs text-primary hover:underline">View history →</Link>
         </div>
+
         {(!meals || meals.length === 0) ? (
           <div className="glass rounded-3xl p-10 text-center">
             <div className="text-sm text-muted-foreground">No meals yet.</div>

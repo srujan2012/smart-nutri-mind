@@ -20,6 +20,9 @@ const CONDITIONS = [
   "PCOS","Kidney Disease","Iron Deficiency","Vitamin D Deficiency","B12 Deficiency",
   "Lactose Intolerance","Gluten Intolerance","Food Allergy",
 ];
+const ALLERGIES = [
+  "Peanuts","Tree Nuts","Dairy","Eggs","Soy","Wheat/Gluten","Fish","Shellfish","Sesame","Mustard","Corn","Sulfites",
+];
 const GOALS: { value: Goal; label: string; desc: string }[] = [
   { value: "lose", label: "Lose fat", desc: "Sustained deficit" },
   { value: "maintain", label: "Maintain", desc: "Balanced fuel" },
@@ -68,6 +71,7 @@ function Onboarding() {
   const [medications, setMedications] = useState("");
   const [goal, setGoal] = useState<Goal>("maintain");
   const [activity, setActivity] = useState<ActivityLevel>("moderate");
+  const [allergies, setAllergies] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   const toggle = (arr: string[], v: string, set: (a: string[]) => void) => {
@@ -93,6 +97,7 @@ function Onboarding() {
           daily_budget, food_preference,
           lifestyle, conditions,
           medications: meds,
+          allergies,
           goal, activity_level: activity,
           calorie_target: targets.calories,
           protein_target: targets.protein,
@@ -254,6 +259,14 @@ function Onboarding() {
               <div className="flex flex-wrap gap-2">
                 {CONDITIONS.map((c) => (
                   <Chip key={c} active={conditions.includes(c)} onClick={() => toggle(conditions, c, setConditions)}>{c}</Chip>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="mb-2 text-xs uppercase tracking-widest text-warning">Food allergies — never suggested</div>
+              <div className="flex flex-wrap gap-2">
+                {ALLERGIES.map((a) => (
+                  <Chip key={a} active={allergies.includes(a)} onClick={() => toggle(allergies, a, setAllergies)}>{a}</Chip>
                 ))}
               </div>
             </div>

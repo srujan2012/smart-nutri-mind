@@ -82,6 +82,13 @@ function profileTargets(profile: {
   };
 }
 
+function allergyClause(profile: { allergies?: string[] | null } | null): string {
+  const a = (profile?.allergies ?? []).filter(Boolean);
+  if (a.length === 0) return "";
+  return ` STRICT ALLERGIES — NEVER suggest, include, or hide these ingredients in ANY food, sauce, drink, add-on, recipe, grocery item, or substitute (also exclude derivatives, e.g. peanut → peanut oil, peanut butter): ${a.join(", ")}. If a recipe would require any of these, replace with a safe alternative and note the swap.`;
+}
+
+
 function remainingFrom(targets: MacroTotals, consumed: MacroTotals): MacroTotals {
   return {
     calories: Math.max(0, targets.calories - consumed.calories),
@@ -109,7 +116,13 @@ const GrocerySuggestionSchema = z.object({
   amount: z.string().default(""),
   reason: z.string().default("Supports today's nutrition gaps"),
   nutrients: z.array(z.string()).default([]),
+  aisle: z.string().default("Other"),
+  substitutes: z.array(z.object({
+    name: z.string(),
+    why: z.string().default(""),
+  })).default([]),
 });
+
 
 const MealAnalysisSchema = z.object({
   name: z.string(),
@@ -215,7 +228,7 @@ export const analyzeMeal = createServerFn({ method: "POST" })
   "confidence": 0-1
 }
 Be specific and realistic. For 'plate_balance', compare this plate against a sensible single-meal share of daily needs and explain low/high nutrients. Include daily calories, protein requirements, carbohydrates, healthy fats, fiber, water recommendations, meal timing, and recovery nutrition when relevant. For 'add_to_this_meal' suggest things the user can literally add to the plate in front of them (a squeeze of lemon, a sprinkle of seeds, a glass of milk, a side of yogurt) and include exact macros. For 'add_to_next_meal' suggest a proper dish or ingredient that closes the user's remaining daily target gaps and explain what gap it prevents.
-Consider the user's profile when scoring and recommending. ${profileCtx}${data.note ? ` User note: ${data.note}` : ""}`;
+Consider the user's profile when scoring and recommending. ${profileCtx}${allergyClause(profile)}${data.note ? ` User note: ${data.note}` : ""}`;
 
 
     const content = await callGateway({
@@ -310,7 +323,7 @@ export const chatWithAI = createServerFn({ method: "POST" })
       profile
         ? `\nUser: age ${profile.age}, ${profile.gender}, ${profile.height_cm}cm/${profile.weight_kg}kg, diet ${profile.food_preference}, goal ${profile.goal}, activity ${profile.activity_level}, lifestyle: ${(profile.lifestyle ?? []).join(", ")}, conditions: ${(profile.conditions ?? []).join(", ") || "none"}, meds: ${(profile.medications ?? []).join(", ") || "none"}, country: ${profile.country}, daily budget: ${profile.daily_budget}.\nTargets: ${profile.calorie_target}kcal, ${profile.protein_target}g protein, ${profile.carbs_target}g carbs, ${profile.fat_target}g fat, ${profile.fiber_target}g fiber.`
         : ""
-    }\nToday so far: ${totals.calories.toFixed(0)}kcal, ${totals.protein.toFixed(0)}g protein, ${totals.carbs.toFixed(0)}g carbs, ${totals.fat.toFixed(0)}g fat, ${totals.fiber.toFixed(0)}g fiber. Meals logged: ${(meals ?? []).map((m) => m.name).join("; ") || "none"}.\nAlways respect dietary preference and medical conditions. Suggest specific foods with portions. When medical advice is needed, note that a professional should be consulted.`;
+    }\nToday so far: ${totals.calories.toFixed(0)}kcal, ${totals.protein.toFixed(0)}g protein, ${totals.carbs.toFixed(0)}g carbs, ${totals.fat.toFixed(0)}g fat, ${totals.fiber.toFixed(0)}g fiber. Meals logged: ${(meals ?? []).map((m) => m.name).join("; ") || "none"}.\nAlways respect dietary preference and medical conditions. Suggest specific foods with portions. When medical advice is needed, note that a professional should be consulted.${allergyClause(profile)}`;
 
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
@@ -363,9 +376,10 @@ export const generateMealPlan = createServerFn({ method: "POST" })
       ? `Current grocery list: ${JSON.stringify(groceries).slice(0, 1200)}.`
       : "No open grocery list items.";
 
-    const system = `You are a meal planning AI. Generate a personalized plan for the remaining meals of today. Fill these remaining gaps: ${remaining.calories.toFixed(0)}kcal, ${remaining.protein.toFixed(0)}g protein, ${remaining.carbs.toFixed(0)}g carbs, ${remaining.fat.toFixed(0)}g healthy fats, ${remaining.fiber.toFixed(0)}g fiber. Water target: ${targets.water_ml}ml/day. Respect diet: ${profile.food_preference}. Country: ${profile.country}. Budget: ${profile.daily_budget}. Goal: ${profile.goal}. Activity: ${profile.activity_level}. Conditions: ${(profile.conditions ?? []).join(", ") || "none"}. ${pantryText} ${groceryText}
-Use fridge ingredients first. Prefer recipes from the latest fridge scan when they fit the gaps. If something is missing, add it to grocery items. Include meal timing and recovery nutrition when relevant. Return ONLY JSON:
-{"meals":[{"slot":"Lunch"|"Snack"|"Dinner"|"Post-workout","name":string,"why":string,"gap_coverage":[string],"meal_timing":string,"recovery_note":string,"ingredients":[{"name":string,"amount":string}],"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number,"prep_minutes":number,"est_cost":number,"instructions":string}],"next_meal_recommendations":[{"name":string,"amount":string,"fixes":string,"prevents_gap":string,"nutrients_balanced":[string],"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number}],"grocery_items":[{"name":string,"amount":string,"reason":string,"nutrients":[string]}]}`;
+    const system = `You are a meal planning AI. Generate a personalized plan for the remaining meals of today. Fill these remaining gaps: ${remaining.calories.toFixed(0)}kcal, ${remaining.protein.toFixed(0)}g protein, ${remaining.carbs.toFixed(0)}g carbs, ${remaining.fat.toFixed(0)}g healthy fats, ${remaining.fiber.toFixed(0)}g fiber. Water target: ${targets.water_ml}ml/day. Respect diet: ${profile.food_preference}. Country: ${profile.country}. Budget: ${profile.daily_budget}. Goal: ${profile.goal}. Activity: ${profile.activity_level}. Conditions: ${(profile.conditions ?? []).join(", ") || "none"}.${allergyClause(profile)} ${pantryText} ${groceryText}
+Use fridge ingredients first. Prefer recipes from the latest fridge scan when they fit the gaps. If something is missing, add it to grocery items with "aisle" (Produce | Dairy & Eggs | Meat & Seafood | Bakery | Grains & Pasta | Canned & Jarred | Frozen | Snacks | Beverages | Condiments & Spices | Other) and 1-2 "substitutes" [{name, why}]. Include meal timing and recovery nutrition when relevant. Return ONLY JSON:
+
+{"meals":[{"slot":"Lunch"|"Snack"|"Dinner"|"Post-workout","name":string,"why":string,"gap_coverage":[string],"meal_timing":string,"recovery_note":string,"ingredients":[{"name":string,"amount":string}],"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number,"prep_minutes":number,"est_cost":number,"instructions":string}],"next_meal_recommendations":[{"name":string,"amount":string,"fixes":string,"prevents_gap":string,"nutrients_balanced":[string],"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number}],"grocery_items":[{"name":string,"amount":string,"reason":string,"nutrients":[string],"aisle":string,"substitutes":[{"name":string,"why":string}]}]}`;
 
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
@@ -402,10 +416,13 @@ Use fridge ingredients first. Prefer recipes from the latest fridge scan when th
       amount: item.amount,
       reason: `${item.reason}${item.nutrients.length ? ` · Nutrients: ${item.nutrients.join(", ")}` : ""}`,
       source: "planner",
+      aisle: item.aisle || "Other",
+      substitutes: item.substitutes ?? [],
     }));
     if (groceryRows.length > 0) {
       await context.supabase.from("grocery_items").insert(groceryRows);
     }
+
 
     return {
       ...parsed,
@@ -494,6 +511,36 @@ export const addToMeal = createServerFn({ method: "POST" })
     return { ok: true, added: macros };
   });
 
+// ---------- Suggest substitutes for an out-of-stock grocery item ----------
+export const suggestSubstitutes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ itemId: z.string().uuid(), name: z.string(), reason: z.string().optional() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: profile } = await context.supabase
+      .from("profiles").select("food_preference, allergies, conditions, country").eq("id", context.userId).maybeSingle();
+    const system = `Suggest 3 smart grocery substitutes for an out-of-stock item. Respect diet: ${profile?.food_preference ?? "any"}. Country: ${profile?.country ?? "any"}. Conditions: ${(profile?.conditions ?? []).join(", ") || "none"}.${allergyClause(profile)} Return ONLY JSON: {"substitutes":[{"name":string,"why":string (why it works nutritionally / culinarily)}]}`;
+    const content = await callGateway({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: `Item unavailable: ${data.name}. Original reason it was needed: ${data.reason ?? "n/a"}. Give 3 substitutes.` },
+      ],
+    });
+    const parsed = z.object({
+      substitutes: z.array(z.object({ name: z.string(), why: z.string().default("") })).default([]),
+    }).parse(extractJson(content));
+    const { error } = await context.supabase
+      .from("grocery_items")
+      .update({ substitutes: parsed.substitutes, unavailable: true })
+      .eq("id", data.itemId)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return parsed;
+  });
+
+
 // ---------- Scan refrigerator / pantry photo ----------
 const FridgeScanSchema = z.object({
   items: z.array(
@@ -568,7 +615,7 @@ export const scanFridge = createServerFn({ method: "POST" })
   "grocery_items": [{"name": string, "amount": string, "reason": string, "nutrients": [string]}],
   "best_pick": string (name of the single best meal_idea for right now)
 }
-Give 3-5 meal ideas, ranked best first. If a recipe cannot fill a required nutrition portion with visible fridge items, put the required ingredient in both meal_ideas[].needs and grocery_items, with exact nutrients it fixes. ${profileCtx}${data.note ? ` Note: ${data.note}` : ""}`;
+Give 3-5 meal ideas, ranked best first. For each grocery_items/missing_staples/needs entry, set "aisle" (Produce | Dairy & Eggs | Meat & Seafood | Bakery | Grains & Pasta | Canned & Jarred | Frozen | Snacks | Beverages | Condiments & Spices | Other) and add 1-2 "substitutes" [{name, why}] so the user can swap when the store is out. ${profileCtx}${allergyClause(profile)}${data.note ? ` Note: ${data.note}` : ""}`;
 
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
@@ -585,17 +632,18 @@ Give 3-5 meal ideas, ranked best first. If a recipe cannot fill a required nutri
     });
 
     const parsed = FridgeScanSchema.parse(extractJson(content));
+    const emptySugg = { aisle: "Other", substitutes: [] as { name: string; why: string }[] };
     const normalizedMissing = parsed.missing_staples.map((item) =>
       typeof item === "string"
-        ? { name: item, amount: "", reason: "Unlocks more balanced fridge meals", nutrients: [] }
-        : item,
+        ? { name: item, amount: "", reason: "Unlocks more balanced fridge meals", nutrients: [], ...emptySugg }
+        : { ...emptySugg, ...item },
     );
     const normalizedMeals = parsed.meal_ideas.map((meal) => ({
       ...meal,
       needs: meal.needs.map((item) =>
         typeof item === "string"
-          ? { name: item, amount: "", reason: "Required to complete this recipe", nutrients: [] }
-          : item,
+          ? { name: item, amount: "", reason: "Required to complete this recipe", nutrients: [], ...emptySugg }
+          : { ...emptySugg, ...item },
       ),
     }));
     const groceryByName = new Map<string, z.infer<typeof GrocerySuggestionSchema>>();
@@ -609,7 +657,10 @@ Give 3-5 meal ideas, ranked best first. If a recipe cannot fill a required nutri
       amount: item.amount,
       reason: `${item.reason}${item.nutrients.length ? ` · Nutrients: ${item.nutrients.join(", ")}` : ""}`,
       source: "fridge",
+      aisle: item.aisle || "Other",
+      substitutes: item.substitutes ?? [],
     }));
+
 
     const { data: saved, error: saveError } = await context.supabase
       .from("pantry_scans")
