@@ -97,6 +97,7 @@ function Onboarding() {
           daily_budget, food_preference,
           lifestyle, conditions,
           medications: meds,
+          allergies,
           goal, activity_level: activity,
           calorie_target: targets.calories,
           protein_target: targets.protein,
