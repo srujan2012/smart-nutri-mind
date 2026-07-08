@@ -16,6 +16,7 @@ import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/s
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPlannerRouteImport } from './routes/_authenticated/planner'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedGroceryRouteImport } from './routes/_authenticated/grocery'
 import { Route as AuthenticatedFridgeRouteImport } from './routes/_authenticated/fridge'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
@@ -54,6 +55,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGroceryRoute = AuthenticatedGroceryRouteImport.update({
+  id: '/grocery',
+  path: '/grocery',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedFridgeRoute = AuthenticatedFridgeRouteImport.update({
   id: '/fridge',
   path: '/fridge',
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/fridge': typeof AuthenticatedFridgeRoute
+  '/grocery': typeof AuthenticatedGroceryRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/planner': typeof AuthenticatedPlannerRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/fridge': typeof AuthenticatedFridgeRoute
+  '/grocery': typeof AuthenticatedGroceryRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/planner': typeof AuthenticatedPlannerRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/fridge': typeof AuthenticatedFridgeRoute
+  '/_authenticated/grocery': typeof AuthenticatedGroceryRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/planner': typeof AuthenticatedPlannerRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/dashboard'
     | '/fridge'
+    | '/grocery'
     | '/onboarding'
     | '/planner'
     | '/profile'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/dashboard'
     | '/fridge'
+    | '/grocery'
     | '/onboarding'
     | '/planner'
     | '/profile'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat'
     | '/_authenticated/dashboard'
     | '/_authenticated/fridge'
+    | '/_authenticated/grocery'
     | '/_authenticated/onboarding'
     | '/_authenticated/planner'
     | '/_authenticated/profile'
@@ -199,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/grocery': {
+      id: '/_authenticated/grocery'
+      path: '/grocery'
+      fullPath: '/grocery'
+      preLoaderRoute: typeof AuthenticatedGroceryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/fridge': {
       id: '/_authenticated/fridge'
       path: '/fridge'
@@ -227,6 +246,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedFridgeRoute: typeof AuthenticatedFridgeRoute
+  AuthenticatedGroceryRoute: typeof AuthenticatedGroceryRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPlannerRoute: typeof AuthenticatedPlannerRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -237,6 +257,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedFridgeRoute: AuthenticatedFridgeRoute,
+  AuthenticatedGroceryRoute: AuthenticatedGroceryRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPlannerRoute: AuthenticatedPlannerRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
