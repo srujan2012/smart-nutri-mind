@@ -142,14 +142,18 @@ function Scan() {
               onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
             />
           </div>
-          <div className="mt-5 rounded-2xl border border-border/60 bg-background/30 p-4 text-left text-xs text-muted-foreground">
-            <div className="mb-2 font-semibold text-foreground">Best scan setup</div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <div>1. Use the rear camera and keep the full plate visible.</div>
-              <div>2. Avoid shadows, blur, and extreme close-ups.</div>
-              <div>3. Add a note for oils, sauces, or hidden ingredients.</div>
+          <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-left text-xs">
+            <div className="mb-2 flex items-center gap-2 font-semibold text-primary">
+              <Lightbulb className="h-3.5 w-3.5" /> Guided capture checklist
             </div>
+            <ul className="grid gap-1.5 sm:grid-cols-2">
+              <li className="flex items-start gap-2"><span className="text-primary">◉</span> Use rear camera, hold phone 20–30cm above the plate</li>
+              <li className="flex items-start gap-2"><span className="text-primary">◉</span> Bright natural light on the food — avoid harsh shadows</li>
+              <li className="flex items-start gap-2"><span className="text-primary">◉</span> Shoot straight down (top-down) for best portion estimates</li>
+              <li className="flex items-start gap-2"><span className="text-primary">◉</span> Include the whole plate & any drink/side in one frame</li>
+            </ul>
           </div>
+
         </div>
       )}
 
