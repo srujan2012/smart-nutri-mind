@@ -20,6 +20,9 @@ const CONDITIONS = [
   "PCOS","Kidney Disease","Iron Deficiency","Vitamin D Deficiency","B12 Deficiency",
   "Lactose Intolerance","Gluten Intolerance","Food Allergy",
 ];
+const ALLERGIES = [
+  "Peanuts","Tree Nuts","Dairy","Eggs","Soy","Wheat/Gluten","Fish","Shellfish","Sesame","Mustard","Corn","Sulfites",
+];
 const GOALS: { value: Goal; label: string; desc: string }[] = [
   { value: "lose", label: "Lose fat", desc: "Sustained deficit" },
   { value: "maintain", label: "Maintain", desc: "Balanced fuel" },
