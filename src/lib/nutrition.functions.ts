@@ -511,6 +511,36 @@ export const addToMeal = createServerFn({ method: "POST" })
     return { ok: true, added: macros };
   });
 
+// ---------- Suggest substitutes for an out-of-stock grocery item ----------
+export const suggestSubstitutes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ itemId: z.string().uuid(), name: z.string(), reason: z.string().optional() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: profile } = await context.supabase
+      .from("profiles").select("food_preference, allergies, conditions, country").eq("id", context.userId).maybeSingle();
+    const system = `Suggest 3 smart grocery substitutes for an out-of-stock item. Respect diet: ${profile?.food_preference ?? "any"}. Country: ${profile?.country ?? "any"}. Conditions: ${(profile?.conditions ?? []).join(", ") || "none"}.${allergyClause(profile)} Return ONLY JSON: {"substitutes":[{"name":string,"why":string (why it works nutritionally / culinarily)}]}`;
+    const content = await callGateway({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: `Item unavailable: ${data.name}. Original reason it was needed: ${data.reason ?? "n/a"}. Give 3 substitutes.` },
+      ],
+    });
+    const parsed = z.object({
+      substitutes: z.array(z.object({ name: z.string(), why: z.string().default("") })).default([]),
+    }).parse(extractJson(content));
+    const { error } = await context.supabase
+      .from("grocery_items")
+      .update({ substitutes: parsed.substitutes, unavailable: true })
+      .eq("id", data.itemId)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return parsed;
+  });
+
+
 // ---------- Scan refrigerator / pantry photo ----------
 const FridgeScanSchema = z.object({
   items: z.array(
