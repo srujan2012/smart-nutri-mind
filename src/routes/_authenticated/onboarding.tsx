@@ -71,6 +71,7 @@ function Onboarding() {
   const [medications, setMedications] = useState("");
   const [goal, setGoal] = useState<Goal>("maintain");
   const [activity, setActivity] = useState<ActivityLevel>("moderate");
+  const [allergies, setAllergies] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   const toggle = (arr: string[], v: string, set: (a: string[]) => void) => {
