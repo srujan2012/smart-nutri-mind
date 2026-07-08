@@ -82,6 +82,13 @@ function profileTargets(profile: {
   };
 }
 
+function allergyClause(profile: { allergies?: string[] | null } | null): string {
+  const a = (profile?.allergies ?? []).filter(Boolean);
+  if (a.length === 0) return "";
+  return ` STRICT ALLERGIES — NEVER suggest, include, or hide these ingredients in ANY food, sauce, drink, add-on, recipe, grocery item, or substitute (also exclude derivatives, e.g. peanut → peanut oil, peanut butter): ${a.join(", ")}. If a recipe would require any of these, replace with a safe alternative and note the swap.`;
+}
+
+
 function remainingFrom(targets: MacroTotals, consumed: MacroTotals): MacroTotals {
   return {
     calories: Math.max(0, targets.calories - consumed.calories),
