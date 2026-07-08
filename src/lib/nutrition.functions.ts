@@ -109,7 +109,13 @@ const GrocerySuggestionSchema = z.object({
   amount: z.string().default(""),
   reason: z.string().default("Supports today's nutrition gaps"),
   nutrients: z.array(z.string()).default([]),
+  aisle: z.string().default("Other"),
+  substitutes: z.array(z.object({
+    name: z.string(),
+    why: z.string().default(""),
+  })).default([]),
 });
+
 
 const MealAnalysisSchema = z.object({
   name: z.string(),
