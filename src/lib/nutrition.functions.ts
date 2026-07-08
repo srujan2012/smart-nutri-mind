@@ -408,10 +408,13 @@ Use fridge ingredients first. Prefer recipes from the latest fridge scan when th
       amount: item.amount,
       reason: `${item.reason}${item.nutrients.length ? ` · Nutrients: ${item.nutrients.join(", ")}` : ""}`,
       source: "planner",
+      aisle: item.aisle || "Other",
+      substitutes: item.substitutes ?? [],
     }));
     if (groceryRows.length > 0) {
       await context.supabase.from("grocery_items").insert(groceryRows);
     }
+
 
     return {
       ...parsed,
