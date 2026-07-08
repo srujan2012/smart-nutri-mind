@@ -584,7 +584,7 @@ export const scanFridge = createServerFn({ method: "POST" })
   "grocery_items": [{"name": string, "amount": string, "reason": string, "nutrients": [string]}],
   "best_pick": string (name of the single best meal_idea for right now)
 }
-Give 3-5 meal ideas, ranked best first. If a recipe cannot fill a required nutrition portion with visible fridge items, put the required ingredient in both meal_ideas[].needs and grocery_items, with exact nutrients it fixes. ${profileCtx}${data.note ? ` Note: ${data.note}` : ""}`;
+Give 3-5 meal ideas, ranked best first. For each grocery_items/missing_staples/needs entry, set "aisle" (Produce | Dairy & Eggs | Meat & Seafood | Bakery | Grains & Pasta | Canned & Jarred | Frozen | Snacks | Beverages | Condiments & Spices | Other) and add 1-2 "substitutes" [{name, why}] so the user can swap when the store is out. ${profileCtx}${allergyClause(profile)}${data.note ? ` Note: ${data.note}` : ""}`;
 
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
