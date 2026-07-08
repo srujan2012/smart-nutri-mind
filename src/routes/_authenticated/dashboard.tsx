@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { NutrientRing } from "@/components/NutrientRing";
-import { Camera, MessageSquare, ChefHat, TrendingUp, Sparkles, Award } from "lucide-react";
+import { Camera, MessageSquare, ChefHat, TrendingUp, Sparkles, Award, Droplets, Clock, HeartPulse, Target, Flame, Beef, Wheat, Salad, Nut } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -46,6 +46,33 @@ function Dashboard() {
     ? Math.round(meals.reduce((a, m) => a + (m.meal_score ?? 0), 0) / meals.length)
     : 0;
 
+  const water_ml = Math.round(Number(profile?.weight_kg ?? 70) * 35);
+  const goal = profile?.goal ?? "maintain";
+  const activity = profile?.activity_level ?? "moderate";
+
+  const mealTiming = [
+    { slot: "Breakfast", window: "7:00 – 9:00", note: "Protein + slow carbs to steady blood sugar" },
+    { slot: "Lunch", window: "12:30 – 14:00", note: "Largest plate: protein, veg, complex carbs" },
+    { slot: "Snack", window: "16:00 – 17:00", note: "Fiber + protein to prevent evening crash" },
+    { slot: "Dinner", window: "19:00 – 20:30", note: "Lighter carbs, healthy fats, veg-forward" },
+  ];
+
+  const recoveryNote =
+    activity === "athlete" || activity === "very"
+      ? "Post-workout: 25–35g protein + 40–60g carbs within 45 min. Add electrolytes if sweat loss >1L."
+      : goal === "gain" || goal === "recomp"
+      ? "Post-training: 20–30g protein + 30g carbs. Sleep 7–9h to lock in gains."
+      : "Rest day: prioritize fiber, omega-3s, and 7–9h sleep for recovery.";
+
+  const targetCards = [
+    { icon: Flame, label: "Calories", value: profile?.calorie_target ?? 2000, unit: "kcal", tone: "text-primary" },
+    { icon: Beef, label: "Protein", value: profile?.protein_target ?? 100, unit: "g", tone: "text-accent" },
+    { icon: Wheat, label: "Carbs", value: profile?.carbs_target ?? 250, unit: "g", tone: "text-warning" },
+    { icon: Nut, label: "Healthy fats", value: profile?.fat_target ?? 70, unit: "g", tone: "text-warning" },
+    { icon: Salad, label: "Fiber", value: profile?.fiber_target ?? 30, unit: "g", tone: "text-primary" },
+    { icon: Droplets, label: "Water", value: water_ml, unit: "ml", tone: "text-accent" },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Greeting */}
@@ -76,6 +103,61 @@ function Dashboard() {
           <NutrientRing value={totals.fiber} target={profile?.fiber_target ?? 30} label="Fiber" unit="g" color="primary" />
         </div>
       </div>
+
+      {/* Daily Nutrition Targets */}
+      <div className="glass-strong rounded-3xl p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <Target className="h-4 w-4 text-primary" /> Daily nutrition targets
+          </div>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            Personalized for {goal} · {activity}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
+          {targetCards.map((t) => (
+            <div key={t.label} className="rounded-2xl border border-border/60 bg-background/30 p-3">
+              <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-widest ${t.tone}`}>
+                <t.icon className="h-3.5 w-3.5" /> {t.label}
+              </div>
+              <div className="mt-1 font-display text-xl font-bold">
+                {t.value.toLocaleString()}
+                <span className="ml-1 text-xs font-normal text-muted-foreground">{t.unit}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border border-border/60 bg-background/30 p-4">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-primary">
+              <Clock className="h-4 w-4" /> Meal timing
+            </div>
+            <ul className="space-y-1.5 text-xs">
+              {mealTiming.map((m) => (
+                <li key={m.slot} className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-semibold">{m.slot}</div>
+                    <div className="text-[11px] text-muted-foreground">{m.note}</div>
+                  </div>
+                  <div className="whitespace-nowrap font-mono text-[11px] text-accent">{m.window}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-background/30 p-4">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-accent">
+              <HeartPulse className="h-4 w-4" /> Recovery nutrition
+            </div>
+            <p className="text-xs text-muted-foreground">{recoveryNote}</p>
+            <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
+              <Droplets className="h-3.5 w-3.5 text-accent" />
+              Sip {Math.round(water_ml / 250)} × 250ml glasses across the day
+            </div>
+          </div>
+        </div>
+      </div>
+
 
       {/* Quick actions + score */}
       <div className="grid gap-4 md:grid-cols-3">
