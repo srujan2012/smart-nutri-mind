@@ -323,7 +323,7 @@ export const chatWithAI = createServerFn({ method: "POST" })
       profile
         ? `\nUser: age ${profile.age}, ${profile.gender}, ${profile.height_cm}cm/${profile.weight_kg}kg, diet ${profile.food_preference}, goal ${profile.goal}, activity ${profile.activity_level}, lifestyle: ${(profile.lifestyle ?? []).join(", ")}, conditions: ${(profile.conditions ?? []).join(", ") || "none"}, meds: ${(profile.medications ?? []).join(", ") || "none"}, country: ${profile.country}, daily budget: ${profile.daily_budget}.\nTargets: ${profile.calorie_target}kcal, ${profile.protein_target}g protein, ${profile.carbs_target}g carbs, ${profile.fat_target}g fat, ${profile.fiber_target}g fiber.`
         : ""
-    }\nToday so far: ${totals.calories.toFixed(0)}kcal, ${totals.protein.toFixed(0)}g protein, ${totals.carbs.toFixed(0)}g carbs, ${totals.fat.toFixed(0)}g fat, ${totals.fiber.toFixed(0)}g fiber. Meals logged: ${(meals ?? []).map((m) => m.name).join("; ") || "none"}.\nAlways respect dietary preference and medical conditions. Suggest specific foods with portions. When medical advice is needed, note that a professional should be consulted.`;
+    }\nToday so far: ${totals.calories.toFixed(0)}kcal, ${totals.protein.toFixed(0)}g protein, ${totals.carbs.toFixed(0)}g carbs, ${totals.fat.toFixed(0)}g fat, ${totals.fiber.toFixed(0)}g fiber. Meals logged: ${(meals ?? []).map((m) => m.name).join("; ") || "none"}.\nAlways respect dietary preference and medical conditions. Suggest specific foods with portions. When medical advice is needed, note that a professional should be consulted.${allergyClause(profile)}`;
 
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
