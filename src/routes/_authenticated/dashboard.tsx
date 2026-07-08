@@ -46,6 +46,33 @@ function Dashboard() {
     ? Math.round(meals.reduce((a, m) => a + (m.meal_score ?? 0), 0) / meals.length)
     : 0;
 
+  const water_ml = Math.round(Number(profile?.weight_kg ?? 70) * 35);
+  const goal = profile?.goal ?? "maintain";
+  const activity = profile?.activity_level ?? "moderate";
+
+  const mealTiming = [
+    { slot: "Breakfast", window: "7:00 – 9:00", note: "Protein + slow carbs to steady blood sugar" },
+    { slot: "Lunch", window: "12:30 – 14:00", note: "Largest plate: protein, veg, complex carbs" },
+    { slot: "Snack", window: "16:00 – 17:00", note: "Fiber + protein to prevent evening crash" },
+    { slot: "Dinner", window: "19:00 – 20:30", note: "Lighter carbs, healthy fats, veg-forward" },
+  ];
+
+  const recoveryNote =
+    activity === "athlete" || activity === "very"
+      ? "Post-workout: 25–35g protein + 40–60g carbs within 45 min. Add electrolytes if sweat loss >1L."
+      : goal === "gain" || goal === "recomp"
+      ? "Post-training: 20–30g protein + 30g carbs. Sleep 7–9h to lock in gains."
+      : "Rest day: prioritize fiber, omega-3s, and 7–9h sleep for recovery.";
+
+  const targetCards = [
+    { icon: Flame, label: "Calories", value: profile?.calorie_target ?? 2000, unit: "kcal", tone: "text-primary" },
+    { icon: Beef, label: "Protein", value: profile?.protein_target ?? 100, unit: "g", tone: "text-accent" },
+    { icon: Wheat, label: "Carbs", value: profile?.carbs_target ?? 250, unit: "g", tone: "text-warning" },
+    { icon: Nut, label: "Healthy fats", value: profile?.fat_target ?? 70, unit: "g", tone: "text-warning" },
+    { icon: Salad, label: "Fiber", value: profile?.fiber_target ?? 30, unit: "g", tone: "text-primary" },
+    { icon: Droplets, label: "Water", value: water_ml, unit: "ml", tone: "text-accent" },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Greeting */}
