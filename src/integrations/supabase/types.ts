@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       grocery_items: {
         Row: {
+          aisle: string
           amount: string | null
           checked: boolean
           created_at: string
@@ -23,10 +24,13 @@ export type Database = {
           name: string
           reason: string | null
           source: string
+          substitutes: Json
+          unavailable: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
+          aisle?: string
           amount?: string | null
           checked?: boolean
           created_at?: string
@@ -34,10 +38,13 @@ export type Database = {
           name: string
           reason?: string | null
           source?: string
+          substitutes?: Json
+          unavailable?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
+          aisle?: string
           amount?: string | null
           checked?: boolean
           created_at?: string
@@ -45,6 +52,8 @@ export type Database = {
           name?: string
           reason?: string | null
           source?: string
+          substitutes?: Json
+          unavailable?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -147,6 +156,7 @@ export type Database = {
         Row: {
           activity_level: string | null
           age: number | null
+          allergies: string[]
           calorie_target: number | null
           carbs_target: number | null
           conditions: string[] | null
@@ -171,6 +181,7 @@ export type Database = {
         Insert: {
           activity_level?: string | null
           age?: number | null
+          allergies?: string[]
           calorie_target?: number | null
           carbs_target?: number | null
           conditions?: string[] | null
@@ -195,6 +206,7 @@ export type Database = {
         Update: {
           activity_level?: string | null
           age?: number | null
+          allergies?: string[]
           calorie_target?: number | null
           carbs_target?: number | null
           conditions?: string[] | null
