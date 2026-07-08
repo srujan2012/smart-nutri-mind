@@ -262,6 +262,14 @@ function Onboarding() {
                 ))}
               </div>
             </div>
+            <div>
+              <div className="mb-2 text-xs uppercase tracking-widest text-warning">Food allergies — never suggested</div>
+              <div className="flex flex-wrap gap-2">
+                {ALLERGIES.map((a) => (
+                  <Chip key={a} active={allergies.includes(a)} onClick={() => toggle(allergies, a, setAllergies)}>{a}</Chip>
+                ))}
+              </div>
+            </div>
             <label className="block space-y-1">
               <span className="text-xs text-muted-foreground">Medications (comma-separated, optional)</span>
               <input
