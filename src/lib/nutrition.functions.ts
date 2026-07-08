@@ -228,7 +228,7 @@ export const analyzeMeal = createServerFn({ method: "POST" })
   "confidence": 0-1
 }
 Be specific and realistic. For 'plate_balance', compare this plate against a sensible single-meal share of daily needs and explain low/high nutrients. Include daily calories, protein requirements, carbohydrates, healthy fats, fiber, water recommendations, meal timing, and recovery nutrition when relevant. For 'add_to_this_meal' suggest things the user can literally add to the plate in front of them (a squeeze of lemon, a sprinkle of seeds, a glass of milk, a side of yogurt) and include exact macros. For 'add_to_next_meal' suggest a proper dish or ingredient that closes the user's remaining daily target gaps and explain what gap it prevents.
-Consider the user's profile when scoring and recommending. ${profileCtx}${data.note ? ` User note: ${data.note}` : ""}`;
+Consider the user's profile when scoring and recommending. ${profileCtx}${allergyClause(profile)}${data.note ? ` User note: ${data.note}` : ""}`;
 
 
     const content = await callGateway({
