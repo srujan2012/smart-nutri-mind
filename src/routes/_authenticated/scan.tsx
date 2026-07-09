@@ -523,6 +523,34 @@ function Scan() {
           </div>
         </div>
       )}
+
+      {lightbox && preview && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Meal photo, full-size"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-4"
+          onClick={() => setLightbox(false)}
+          onKeyDown={(e) => e.key === "Escape" && setLightbox(false)}
+          tabIndex={-1}
+          ref={(el) => el?.focus()}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setLightbox(false); }}
+            aria-label="Close full-size photo"
+            className="absolute right-4 top-4 rounded-full border border-border bg-background/80 p-2 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={preview}
+            alt={result ? `Photo of ${result.name}, full-size` : "Meal photo, full-size"}
+            className="max-h-full max-w-full rounded-2xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
