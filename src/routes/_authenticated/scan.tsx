@@ -276,7 +276,13 @@ function Scan() {
                   const pct = Math.min(100, Math.round((b.current / max) * 100));
                   const tone = b.status === "high" ? "bg-destructive" : b.status === "low" ? "bg-warning" : "bg-primary";
                   return (
-                    <div key={i} className="rounded-2xl border border-border/60 p-3">
+                    <div
+                      key={i}
+                      tabIndex={0}
+                      role="group"
+                      aria-label={`${b.nutrient} is ${b.status}. Current ${Math.round(b.current)}, target ${Math.round(b.target_for_meal)}. ${b.explanation}`}
+                      className="rounded-2xl border border-border/60 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="text-sm font-semibold">{b.nutrient}</div>
