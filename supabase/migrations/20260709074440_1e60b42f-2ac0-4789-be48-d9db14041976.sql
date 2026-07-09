@@ -1,0 +1,10 @@
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS sport TEXT,
+  ADD COLUMN IF NOT EXISTS sport_position TEXT,
+  ADD COLUMN IF NOT EXISTS competition_level TEXT,
+  ADD COLUMN IF NOT EXISTS training_days_per_week INTEGER,
+  ADD COLUMN IF NOT EXISTS training_hours_per_day NUMERIC,
+  ADD COLUMN IF NOT EXISTS wake_time TEXT,
+  ADD COLUMN IF NOT EXISTS sleep_time TEXT,
+  ADD COLUMN IF NOT EXISTS timezone TEXT;
