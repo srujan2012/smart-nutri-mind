@@ -55,6 +55,12 @@ function Chip({
   );
 }
 
+const SPORTS = [
+  "None","Running","Cycling","Swimming","Football","Basketball","Cricket","Tennis",
+  "Weightlifting","CrossFit","Boxing","MMA","Rowing","Yoga","Hiking","Triathlon","Volleyball","Badminton",
+];
+const COMP_LEVELS = ["Recreational","Amateur","Semi-Pro","Professional"];
+
 function Onboarding() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -72,6 +78,13 @@ function Onboarding() {
   const [goal, setGoal] = useState<Goal>("maintain");
   const [activity, setActivity] = useState<ActivityLevel>("moderate");
   const [allergies, setAllergies] = useState<string[]>([]);
+  const [sport, setSport] = useState<string>("None");
+  const [sport_position, setPosition] = useState<string>("");
+  const [competition_level, setCompLevel] = useState<string>("Recreational");
+  const [training_days_per_week, setTrainDays] = useState<number>(3);
+  const [training_hours_per_day, setTrainHours] = useState<number>(1);
+  const [wake_time, setWake] = useState<string>("07:00");
+  const [sleep_time, setSleep] = useState<string>("23:00");
   const [saving, setSaving] = useState(false);
 
   const toggle = (arr: string[], v: string, set: (a: string[]) => void) => {
@@ -89,6 +102,11 @@ function Onboarding() {
       if (!user.user) throw new Error("No user");
       const meds = medications
         .split(",").map((m) => m.trim()).filter(Boolean);
+      const timezone =
+        typeof Intl !== "undefined"
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : null;
+      const isAthlete = sport && sport !== "None";
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -104,6 +122,14 @@ function Onboarding() {
           carbs_target: targets.carbs,
           fat_target: targets.fat,
           fiber_target: targets.fiber,
+          sport: isAthlete ? sport : null,
+          sport_position: isAthlete ? sport_position || null : null,
+          competition_level: isAthlete ? competition_level : null,
+          training_days_per_week: isAthlete ? training_days_per_week : null,
+          training_hours_per_day: isAthlete ? training_hours_per_day : null,
+          wake_time,
+          sleep_time,
+          timezone,
           onboarded: true,
         })
         .eq("id", user.user.id);
@@ -118,7 +144,7 @@ function Onboarding() {
   };
 
   const steps = [
-    "Basics", "Body", "Lifestyle", "Diet & Health", "Goal", "Preview",
+    "Basics", "Body", "Lifestyle", "Diet & Health", "Goal", "Athlete", "Preview",
   ];
 
   return (
