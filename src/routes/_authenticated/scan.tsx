@@ -242,20 +242,28 @@ function Scan() {
             </div>
           </div>
 
-          <div className="glass grid grid-cols-2 gap-3 rounded-3xl p-4 md:grid-cols-5">
+          <ul
+            className="glass grid grid-cols-2 gap-3 rounded-3xl p-4 md:grid-cols-5"
+            aria-label="Meal macronutrient totals"
+          >
             {[
-              { l: "Cal", v: result.calories, u: "" },
-              { l: "Protein", v: result.protein, u: "g" },
-              { l: "Carbs", v: result.carbs, u: "g" },
-              { l: "Fat", v: result.fat, u: "g" },
-              { l: "Fiber", v: result.fiber, u: "g" },
+              { l: "Cal", full: "Calories", v: result.calories, u: "kcal" },
+              { l: "Protein", full: "Protein", v: result.protein, u: "grams" },
+              { l: "Carbs", full: "Carbohydrates", v: result.carbs, u: "grams" },
+              { l: "Fat", full: "Fat", v: result.fat, u: "grams" },
+              { l: "Fiber", full: "Fiber", v: result.fiber, u: "grams" },
             ].map((s) => (
-              <div key={s.l} className="text-center">
+              <li
+                key={s.l}
+                tabIndex={0}
+                aria-label={`${s.full}: ${Math.round(s.v)} ${s.u}`}
+                className="text-center rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
                 <div className="text-[10px] uppercase text-muted-foreground">{s.l}</div>
-                <div className="font-display text-xl">{Math.round(s.v)}{s.u}</div>
-              </div>
+                <div className="font-display text-xl">{Math.round(s.v)}{s.u === "grams" ? "g" : ""}</div>
+              </li>
             ))}
-          </div>
+          </ul>
 
           {result.plate_balance?.length > 0 && (
             <div className="glass rounded-3xl p-5">
