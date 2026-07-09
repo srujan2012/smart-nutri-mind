@@ -5,7 +5,7 @@ import { analyzeMeal, addToMeal } from "@/lib/nutrition.functions";
 import { fileToCompressedDataUrl } from "@/lib/image-compress";
 import {
   Camera, Upload, Sparkles, ArrowRight, AlertCircle, CheckCircle2,
-  Lightbulb, Plus, TrendingDown, TrendingUp, Clock, Check, Droplets,
+  Lightbulb, Plus, TrendingDown, TrendingUp, Clock, Check, Droplets, X, ZoomIn,
 } from "lucide-react";
 import { toast } from "sonner";
 
