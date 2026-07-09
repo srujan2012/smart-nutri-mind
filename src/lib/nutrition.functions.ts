@@ -560,7 +560,7 @@ export const suggestSubstitutes = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { data: profile } = await context.supabase
-      .from("profiles").select("food_preference, allergies, conditions, country").eq("id", context.userId).maybeSingle();
+      .from("profiles").select("*").eq("id", context.userId).maybeSingle();
     const system = `Suggest 3 smart grocery substitutes for an out-of-stock item. Respect diet: ${profile?.food_preference ?? "any"}. Country: ${profile?.country ?? "any"}. Conditions: ${(profile?.conditions ?? []).join(", ") || "none"}.${allergyClause(profile)}${sportContext(profile)} Return ONLY JSON: {"substitutes":[{"name":string,"why":string (why it works nutritionally / culinarily)}]}`;
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
