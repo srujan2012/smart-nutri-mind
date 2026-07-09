@@ -55,6 +55,12 @@ function Chip({
   );
 }
 
+const SPORTS = [
+  "None","Running","Cycling","Swimming","Football","Basketball","Cricket","Tennis",
+  "Weightlifting","CrossFit","Boxing","MMA","Rowing","Yoga","Hiking","Triathlon","Volleyball","Badminton",
+];
+const COMP_LEVELS = ["Recreational","Amateur","Semi-Pro","Professional"];
+
 function Onboarding() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -72,6 +78,13 @@ function Onboarding() {
   const [goal, setGoal] = useState<Goal>("maintain");
   const [activity, setActivity] = useState<ActivityLevel>("moderate");
   const [allergies, setAllergies] = useState<string[]>([]);
+  const [sport, setSport] = useState<string>("None");
+  const [sport_position, setPosition] = useState<string>("");
+  const [competition_level, setCompLevel] = useState<string>("Recreational");
+  const [training_days_per_week, setTrainDays] = useState<number>(3);
+  const [training_hours_per_day, setTrainHours] = useState<number>(1);
+  const [wake_time, setWake] = useState<string>("07:00");
+  const [sleep_time, setSleep] = useState<string>("23:00");
   const [saving, setSaving] = useState(false);
 
   const toggle = (arr: string[], v: string, set: (a: string[]) => void) => {
@@ -89,6 +102,11 @@ function Onboarding() {
       if (!user.user) throw new Error("No user");
       const meds = medications
         .split(",").map((m) => m.trim()).filter(Boolean);
+      const timezone =
+        typeof Intl !== "undefined"
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : null;
+      const isAthlete = sport && sport !== "None";
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -104,6 +122,14 @@ function Onboarding() {
           carbs_target: targets.carbs,
           fat_target: targets.fat,
           fiber_target: targets.fiber,
+          sport: isAthlete ? sport : null,
+          sport_position: isAthlete ? sport_position || null : null,
+          competition_level: isAthlete ? competition_level : null,
+          training_days_per_week: isAthlete ? training_days_per_week : null,
+          training_hours_per_day: isAthlete ? training_hours_per_day : null,
+          wake_time,
+          sleep_time,
+          timezone,
           onboarded: true,
         })
         .eq("id", user.user.id);
@@ -118,7 +144,7 @@ function Onboarding() {
   };
 
   const steps = [
-    "Basics", "Body", "Lifestyle", "Diet & Health", "Goal", "Preview",
+    "Basics", "Body", "Lifestyle", "Diet & Health", "Goal", "Athlete", "Preview",
   ];
 
   return (
@@ -306,6 +332,87 @@ function Onboarding() {
         )}
 
         {step === 5 && (
+          <div className="space-y-5">
+            <h2 className="font-display text-2xl font-bold">Athlete mode</h2>
+            <p className="text-sm text-muted-foreground">
+              Optional. Pick your sport to unlock pre / during / post-training nutrition tuned to your session.
+            </p>
+            <div>
+              <div className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Sport</div>
+              <div className="flex flex-wrap gap-2">
+                {SPORTS.map((s) => (
+                  <Chip key={s} active={sport === s} onClick={() => setSport(s)}>{s}</Chip>
+                ))}
+              </div>
+            </div>
+            {sport !== "None" && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Position / discipline (optional)</span>
+                    <input
+                      value={sport_position}
+                      onChange={(e) => setPosition(e.target.value)}
+                      placeholder="e.g. Midfielder, Sprinter"
+                      className="w-full rounded-2xl border border-border bg-input/40 px-4 py-3 text-sm focus:border-primary focus:outline-none"
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Competition level</span>
+                    <select
+                      value={competition_level}
+                      onChange={(e) => setCompLevel(e.target.value)}
+                      className="w-full rounded-2xl border border-border bg-input/40 px-4 py-3 text-sm focus:border-primary focus:outline-none"
+                    >
+                      {COMP_LEVELS.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Training days / week</span>
+                    <input
+                      type="number" min={0} max={14}
+                      value={training_days_per_week}
+                      onChange={(e) => setTrainDays(+e.target.value)}
+                      className="w-full rounded-2xl border border-border bg-input/40 px-4 py-3 text-sm focus:border-primary focus:outline-none"
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Hours / session</span>
+                    <input
+                      type="number" min={0.25} max={8} step={0.25}
+                      value={training_hours_per_day}
+                      onChange={(e) => setTrainHours(+e.target.value)}
+                      className="w-full rounded-2xl border border-border bg-input/40 px-4 py-3 text-sm focus:border-primary focus:outline-none"
+                    />
+                  </label>
+                </div>
+              </>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">Wake time (for meal timing)</span>
+                <input
+                  type="time" value={wake_time}
+                  onChange={(e) => setWake(e.target.value)}
+                  className="w-full rounded-2xl border border-border bg-input/40 px-4 py-3 text-sm focus:border-primary focus:outline-none"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">Sleep time</span>
+                <input
+                  type="time" value={sleep_time}
+                  onChange={(e) => setSleep(e.target.value)}
+                  className="w-full rounded-2xl border border-border bg-input/40 px-4 py-3 text-sm focus:border-primary focus:outline-none"
+                />
+              </label>
+            </div>
+            <div className="rounded-2xl bg-primary/5 p-3 text-[11px] text-muted-foreground">
+              Timezone auto-detected — your daily log will roll over at your local midnight.
+            </div>
+          </div>
+        )}
+
+        {step === 6 && (
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 text-xs text-primary">
               <Sparkles className="h-3 w-3" /> AI-calibrated targets
@@ -329,6 +436,14 @@ function Onboarding() {
             <div className="rounded-2xl bg-accent/10 p-4 text-sm text-accent">
               Water target: ~{targets.water_ml} ml/day
             </div>
+            {sport !== "None" && (
+              <div className="rounded-2xl bg-primary/10 p-4 text-sm">
+                <div className="text-[10px] uppercase tracking-widest text-primary">Athlete mode</div>
+                <div className="mt-1">
+                  {sport}{sport_position ? ` · ${sport_position}` : ""} · {competition_level} · {training_days_per_week}×/wk, {training_hours_per_day}h
+                </div>
+              </div>
+            )}
           </div>
         )}
 

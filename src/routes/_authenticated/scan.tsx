@@ -5,7 +5,7 @@ import { analyzeMeal, addToMeal } from "@/lib/nutrition.functions";
 import { fileToCompressedDataUrl } from "@/lib/image-compress";
 import {
   Camera, Upload, Sparkles, ArrowRight, AlertCircle, CheckCircle2,
-  Lightbulb, Plus, TrendingDown, TrendingUp, Clock, Check, Droplets,
+  Lightbulb, Plus, TrendingDown, TrendingUp, Clock, Check, Droplets, X, ZoomIn,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,6 +29,7 @@ function Scan() {
   const [mealId, setMealId] = useState<string | null>(null);
   const [addedKeys, setAddedKeys] = useState<Set<string>>(new Set());
   const [addingKey, setAddingKey] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState(false);
 
   const onFile = async (file: File) => {
     setPreparing(true);
@@ -159,8 +160,18 @@ function Scan() {
 
       {preview && !result && (
         <div className="space-y-4">
-          <div className="glass-strong overflow-hidden rounded-3xl">
-            <img src={preview} alt="Meal preview" className="w-full max-h-96 object-cover" />
+          <div className="glass-strong overflow-hidden rounded-3xl relative">
+            <button
+              type="button"
+              onClick={() => setLightbox(true)}
+              className="block w-full text-left"
+              aria-label="View meal photo full-size"
+            >
+              <img src={preview} alt="Meal preview" className="w-full max-h-96 object-cover" />
+              <span className="absolute right-3 top-3 rounded-full bg-background/70 p-1.5 text-primary">
+                <ZoomIn className="h-4 w-4" />
+              </span>
+            </button>
           </div>
           <input
             value={note}
@@ -198,7 +209,17 @@ function Scan() {
       {result && (
         <div className="space-y-4">
           <div className="glass-strong overflow-hidden rounded-3xl">
-            <img src={preview!} alt="" className="w-full max-h-64 object-cover" />
+            <button
+              type="button"
+              onClick={() => setLightbox(true)}
+              className="relative block w-full text-left"
+              aria-label="View meal photo full-size"
+            >
+              <img src={preview!} alt={`Photo of ${result.name}`} className="w-full max-h-64 object-cover" />
+              <span className="absolute right-3 top-3 rounded-full bg-background/70 p-1.5 text-primary">
+                <ZoomIn className="h-4 w-4" />
+              </span>
+            </button>
             <div className="p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -221,20 +242,28 @@ function Scan() {
             </div>
           </div>
 
-          <div className="glass grid grid-cols-2 gap-3 rounded-3xl p-4 md:grid-cols-5">
+          <ul
+            className="glass grid grid-cols-2 gap-3 rounded-3xl p-4 md:grid-cols-5"
+            aria-label="Meal macronutrient totals"
+          >
             {[
-              { l: "Cal", v: result.calories, u: "" },
-              { l: "Protein", v: result.protein, u: "g" },
-              { l: "Carbs", v: result.carbs, u: "g" },
-              { l: "Fat", v: result.fat, u: "g" },
-              { l: "Fiber", v: result.fiber, u: "g" },
+              { l: "Cal", full: "Calories", v: result.calories, u: "kcal" },
+              { l: "Protein", full: "Protein", v: result.protein, u: "grams" },
+              { l: "Carbs", full: "Carbohydrates", v: result.carbs, u: "grams" },
+              { l: "Fat", full: "Fat", v: result.fat, u: "grams" },
+              { l: "Fiber", full: "Fiber", v: result.fiber, u: "grams" },
             ].map((s) => (
-              <div key={s.l} className="text-center">
+              <li
+                key={s.l}
+                tabIndex={0}
+                aria-label={`${s.full}: ${Math.round(s.v)} ${s.u}`}
+                className="text-center rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
                 <div className="text-[10px] uppercase text-muted-foreground">{s.l}</div>
-                <div className="font-display text-xl">{Math.round(s.v)}{s.u}</div>
-              </div>
+                <div className="font-display text-xl">{Math.round(s.v)}{s.u === "grams" ? "g" : ""}</div>
+              </li>
             ))}
-          </div>
+          </ul>
 
           {result.plate_balance?.length > 0 && (
             <div className="glass rounded-3xl p-5">
@@ -247,7 +276,13 @@ function Scan() {
                   const pct = Math.min(100, Math.round((b.current / max) * 100));
                   const tone = b.status === "high" ? "bg-destructive" : b.status === "low" ? "bg-warning" : "bg-primary";
                   return (
-                    <div key={i} className="rounded-2xl border border-border/60 p-3">
+                    <div
+                      key={i}
+                      tabIndex={0}
+                      role="group"
+                      aria-label={`${b.nutrient} is ${b.status}. Current ${Math.round(b.current)}, target ${Math.round(b.target_for_meal)}. ${b.explanation}`}
+                      className="rounded-2xl border border-border/60 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="text-sm font-semibold">{b.nutrient}</div>
@@ -486,6 +521,34 @@ function Scan() {
               View day <ArrowRight className="h-4 w-4" />
             </button>
           </div>
+        </div>
+      )}
+
+      {lightbox && preview && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Meal photo, full-size"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-4"
+          onClick={() => setLightbox(false)}
+          onKeyDown={(e) => e.key === "Escape" && setLightbox(false)}
+          tabIndex={-1}
+          ref={(el) => el?.focus()}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setLightbox(false); }}
+            aria-label="Close full-size photo"
+            className="absolute right-4 top-4 rounded-full border border-border bg-background/80 p-2 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={preview}
+            alt={result ? `Photo of ${result.name}, full-size` : "Meal photo, full-size"}
+            className="max-h-full max-w-full rounded-2xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

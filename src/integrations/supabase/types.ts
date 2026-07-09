@@ -159,6 +159,7 @@ export type Database = {
           allergies: string[]
           calorie_target: number | null
           carbs_target: number | null
+          competition_level: string | null
           conditions: string[] | null
           country: string | null
           created_at: string
@@ -175,7 +176,14 @@ export type Database = {
           medications: string[] | null
           onboarded: boolean
           protein_target: number | null
+          sleep_time: string | null
+          sport: string | null
+          sport_position: string | null
+          timezone: string | null
+          training_days_per_week: number | null
+          training_hours_per_day: number | null
           updated_at: string
+          wake_time: string | null
           weight_kg: number | null
         }
         Insert: {
@@ -184,6 +192,7 @@ export type Database = {
           allergies?: string[]
           calorie_target?: number | null
           carbs_target?: number | null
+          competition_level?: string | null
           conditions?: string[] | null
           country?: string | null
           created_at?: string
@@ -200,7 +209,14 @@ export type Database = {
           medications?: string[] | null
           onboarded?: boolean
           protein_target?: number | null
+          sleep_time?: string | null
+          sport?: string | null
+          sport_position?: string | null
+          timezone?: string | null
+          training_days_per_week?: number | null
+          training_hours_per_day?: number | null
           updated_at?: string
+          wake_time?: string | null
           weight_kg?: number | null
         }
         Update: {
@@ -209,6 +225,7 @@ export type Database = {
           allergies?: string[]
           calorie_target?: number | null
           carbs_target?: number | null
+          competition_level?: string | null
           conditions?: string[] | null
           country?: string | null
           created_at?: string
@@ -225,7 +242,14 @@ export type Database = {
           medications?: string[] | null
           onboarded?: boolean
           protein_target?: number | null
+          sleep_time?: string | null
+          sport?: string | null
+          sport_position?: string | null
+          timezone?: string | null
+          training_days_per_week?: number | null
+          training_hours_per_day?: number | null
           updated_at?: string
+          wake_time?: string | null
           weight_kg?: number | null
         }
         Relationships: []
