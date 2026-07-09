@@ -209,7 +209,17 @@ function Scan() {
       {result && (
         <div className="space-y-4">
           <div className="glass-strong overflow-hidden rounded-3xl">
-            <img src={preview!} alt="" className="w-full max-h-64 object-cover" />
+            <button
+              type="button"
+              onClick={() => setLightbox(true)}
+              className="relative block w-full text-left"
+              aria-label="View meal photo full-size"
+            >
+              <img src={preview!} alt={`Photo of ${result.name}`} className="w-full max-h-64 object-cover" />
+              <span className="absolute right-3 top-3 rounded-full bg-background/70 p-1.5 text-primary">
+                <ZoomIn className="h-4 w-4" />
+              </span>
+            </button>
             <div className="p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
