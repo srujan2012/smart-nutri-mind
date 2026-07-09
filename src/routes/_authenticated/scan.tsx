@@ -29,6 +29,7 @@ function Scan() {
   const [mealId, setMealId] = useState<string | null>(null);
   const [addedKeys, setAddedKeys] = useState<Set<string>>(new Set());
   const [addingKey, setAddingKey] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState(false);
 
   const onFile = async (file: File) => {
     setPreparing(true);
