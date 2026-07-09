@@ -88,6 +88,50 @@ function allergyClause(profile: { allergies?: string[] | null } | null): string 
   return ` STRICT ALLERGIES — NEVER suggest, include, or hide these ingredients in ANY food, sauce, drink, add-on, recipe, grocery item, or substitute (also exclude derivatives, e.g. peanut → peanut oil, peanut butter): ${a.join(", ")}. If a recipe would require any of these, replace with a safe alternative and note the swap.`;
 }
 
+function sportContext(profile: {
+  sport?: string | null;
+  sport_position?: string | null;
+  competition_level?: string | null;
+  training_days_per_week?: number | null;
+  training_hours_per_day?: number | null;
+  wake_time?: string | null;
+  sleep_time?: string | null;
+  activity_level?: string | null;
+} | null): string {
+  if (!profile?.sport) return "";
+  const parts = [
+    `Sport: ${profile.sport}`,
+    profile.sport_position ? `Position: ${profile.sport_position}` : "",
+    profile.competition_level ? `Level: ${profile.competition_level}` : "",
+    profile.training_days_per_week ? `Trains ${profile.training_days_per_week}×/week` : "",
+    profile.training_hours_per_day ? `${profile.training_hours_per_day}h per session` : "",
+    profile.wake_time ? `Wakes ${profile.wake_time}` : "",
+    profile.sleep_time ? `Sleeps ${profile.sleep_time}` : "",
+  ].filter(Boolean).join(" · ");
+  return ` ATHLETE MODE — ${parts}. Tune pre-training (2–3h before: complex carbs + moderate protein, low fat/fiber), during-training (>60 min: 30–60g carbs/h + electrolytes), and post-training (within 45 min: 0.3g/kg protein + 1g/kg carbs) recommendations to this sport, position, and today's likely training window. Call out hydration and sodium needs for the session.`;
+}
+
+// Returns the UTC Date that corresponds to 00:00 in the user's local timezone.
+function startOfLocalDay(tz?: string | null): Date {
+  const tzName = tz || "UTC";
+  const now = new Date();
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tzName,
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+    }).formatToParts(now);
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "0";
+    const asUtc = Date.UTC(+get("year"), +get("month") - 1, +get("day"), +get("hour"), +get("minute"), +get("second"));
+    const offsetMs = asUtc - now.getTime();
+    const localMidUtc = Date.UTC(+get("year"), +get("month") - 1, +get("day"), 0, 0, 0);
+    return new Date(localMidUtc - offsetMs);
+  } catch {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+}
 
 function remainingFrom(targets: MacroTotals, consumed: MacroTotals): MacroTotals {
   return {
