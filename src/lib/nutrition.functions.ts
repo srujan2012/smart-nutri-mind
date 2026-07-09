@@ -241,8 +241,7 @@ export const analyzeMeal = createServerFn({ method: "POST" })
       .eq("id", context.userId)
       .maybeSingle();
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfLocalDay(profile?.timezone);
     const { data: todayMeals } = await context.supabase
       .from("meals")
       .select("calories, protein, carbs, fat, fiber")
@@ -343,8 +342,7 @@ export const chatWithAI = createServerFn({ method: "POST" })
       .eq("id", context.userId)
       .maybeSingle();
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfLocalDay(profile?.timezone);
     const { data: meals } = await context.supabase
       .from("meals")
       .select("name, calories, protein, carbs, fat, fiber, meal_score, consumed_at")
@@ -388,8 +386,7 @@ export const generateMealPlan = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!profile) throw new Error("Complete your profile first.");
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfLocalDay(profile?.timezone);
     const { data: meals } = await context.supabase
       .from("meals")
       .select("name, calories, protein, carbs, fat, fiber")
@@ -636,8 +633,7 @@ export const scanFridge = createServerFn({ method: "POST" })
       .eq("id", context.userId)
       .maybeSingle();
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfLocalDay(profile?.timezone);
     const { data: meals } = await context.supabase
       .from("meals")
       .select("calories, protein, carbs, fat, fiber")
