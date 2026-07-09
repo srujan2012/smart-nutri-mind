@@ -169,6 +169,38 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* Athlete Mode training-day timeline */}
+      {profile?.sport && (
+        <div className="glass-strong rounded-3xl p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+              <Sparkles className="h-4 w-4" /> Athlete mode · {profile.sport}
+              {profile.sport_position ? <span className="text-muted-foreground font-normal">· {profile.sport_position}</span> : null}
+            </div>
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              {profile.competition_level ?? "Recreational"} · {profile.training_days_per_week ?? 3}×/wk · {profile.training_hours_per_day ?? 1}h
+            </span>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {[
+              { title: "Pre-training (2–3h before)", body: "Complex carbs + moderate protein, low fat/fiber. e.g. oats + banana + whey, or rice + chicken + fruit." },
+              { title: "During (>60 min)", body: "30–60g carbs/hour + electrolytes (300–600 mg sodium/L). Sports drink, dates, or gel." },
+              { title: "Post-training (within 45 min)", body: `${Math.round(Number(profile.weight_kg ?? 70) * 0.3)}g protein + ${Math.round(Number(profile.weight_kg ?? 70) * 1)}g carbs. e.g. shake + rice bowl, or milk + fruit + toast.` },
+            ].map((b) => (
+              <div key={b.title} className="rounded-2xl border border-border/60 bg-background/30 p-4">
+                <div className="text-[10px] uppercase tracking-widest text-accent">{b.title}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{b.body}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 rounded-2xl bg-primary/5 p-3 text-[11px] text-muted-foreground">
+            Session hydration: ~500ml 2h pre · 150–250ml every 15–20 min during · 1.25–1.5L per kg lost post-session. Add electrolytes if sweating heavily or >60 min.
+          </div>
+        </div>
+      )}
+
+
+
 
       {/* Quick actions + score */}
       <div className="grid gap-4 md:grid-cols-3">
