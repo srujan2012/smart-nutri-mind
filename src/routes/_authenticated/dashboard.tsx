@@ -194,7 +194,7 @@ function Dashboard() {
             ))}
           </div>
           <div className="mt-4 rounded-2xl bg-primary/5 p-3 text-[11px] text-muted-foreground">
-            Session hydration: ~500ml 2h pre · 150–250ml every 15–20 min during · 1.25–1.5L per kg lost post-session. Add electrolytes if sweating heavily or >60 min.
+            Session hydration: ~500ml 2h pre · 150–250ml every 15–20 min during · 1.25–1.5L per kg lost post-session. Add electrolytes if sweating heavily or over 60 min.
           </div>
         </div>
       )}
