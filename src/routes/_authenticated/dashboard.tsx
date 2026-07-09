@@ -19,16 +19,27 @@ function Dashboard() {
     },
   });
 
+  const tz = profile?.timezone ?? undefined;
   const { data: meals } = useQuery({
-    queryKey: ["meals-today"],
+    queryKey: ["meals-today", tz],
     queryFn: async () => {
-      const start = new Date(); start.setHours(0, 0, 0, 0);
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz || undefined,
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+      }).formatToParts(now);
+      const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "0";
+      const asUtc = Date.UTC(+get("year"), +get("month")-1, +get("day"), +get("hour"), +get("minute"), +get("second"));
+      const offset = asUtc - now.getTime();
+      const start = new Date(Date.UTC(+get("year"), +get("month")-1, +get("day")) - offset);
       const { data } = await supabase
         .from("meals").select("*")
         .gte("consumed_at", start.toISOString())
         .order("consumed_at", { ascending: false });
       return data ?? [];
     },
+    enabled: profile !== undefined,
   });
 
   const totals = (meals ?? []).reduce(
