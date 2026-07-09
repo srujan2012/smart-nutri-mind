@@ -271,7 +271,7 @@ export const analyzeMeal = createServerFn({ method: "POST" })
   "confidence": 0-1
 }
 Be specific and realistic. For 'plate_balance', compare this plate against a sensible single-meal share of daily needs and explain low/high nutrients. Include daily calories, protein requirements, carbohydrates, healthy fats, fiber, water recommendations, meal timing, and recovery nutrition when relevant. For 'add_to_this_meal' suggest things the user can literally add to the plate in front of them (a squeeze of lemon, a sprinkle of seeds, a glass of milk, a side of yogurt) and include exact macros. For 'add_to_next_meal' suggest a proper dish or ingredient that closes the user's remaining daily target gaps and explain what gap it prevents.
-Consider the user's profile when scoring and recommending. ${profileCtx}${allergyClause(profile)}${data.note ? ` User note: ${data.note}` : ""}`;
+Consider the user's profile when scoring and recommending. ${profileCtx}${allergyClause(profile)}${sportContext(profile)}${data.note ? ` User note: ${data.note}` : ""}`;
 
 
     const content = await callGateway({
@@ -365,7 +365,7 @@ export const chatWithAI = createServerFn({ method: "POST" })
       profile
         ? `\nUser: age ${profile.age}, ${profile.gender}, ${profile.height_cm}cm/${profile.weight_kg}kg, diet ${profile.food_preference}, goal ${profile.goal}, activity ${profile.activity_level}, lifestyle: ${(profile.lifestyle ?? []).join(", ")}, conditions: ${(profile.conditions ?? []).join(", ") || "none"}, meds: ${(profile.medications ?? []).join(", ") || "none"}, country: ${profile.country}, daily budget: ${profile.daily_budget}.\nTargets: ${profile.calorie_target}kcal, ${profile.protein_target}g protein, ${profile.carbs_target}g carbs, ${profile.fat_target}g fat, ${profile.fiber_target}g fiber.`
         : ""
-    }\nToday so far: ${totals.calories.toFixed(0)}kcal, ${totals.protein.toFixed(0)}g protein, ${totals.carbs.toFixed(0)}g carbs, ${totals.fat.toFixed(0)}g fat, ${totals.fiber.toFixed(0)}g fiber. Meals logged: ${(meals ?? []).map((m) => m.name).join("; ") || "none"}.\nAlways respect dietary preference and medical conditions. Suggest specific foods with portions. When medical advice is needed, note that a professional should be consulted.${allergyClause(profile)}`;
+    }\nToday so far: ${totals.calories.toFixed(0)}kcal, ${totals.protein.toFixed(0)}g protein, ${totals.carbs.toFixed(0)}g carbs, ${totals.fat.toFixed(0)}g fat, ${totals.fiber.toFixed(0)}g fiber. Meals logged: ${(meals ?? []).map((m) => m.name).join("; ") || "none"}.\nAlways respect dietary preference and medical conditions. Suggest specific foods with portions. When medical advice is needed, note that a professional should be consulted.${allergyClause(profile)}${sportContext(profile)}`;
 
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
@@ -417,7 +417,7 @@ export const generateMealPlan = createServerFn({ method: "POST" })
       ? `Current grocery list: ${JSON.stringify(groceries).slice(0, 1200)}.`
       : "No open grocery list items.";
 
-    const system = `You are a meal planning AI. Generate a personalized plan for the remaining meals of today. Fill these remaining gaps: ${remaining.calories.toFixed(0)}kcal, ${remaining.protein.toFixed(0)}g protein, ${remaining.carbs.toFixed(0)}g carbs, ${remaining.fat.toFixed(0)}g healthy fats, ${remaining.fiber.toFixed(0)}g fiber. Water target: ${targets.water_ml}ml/day. Respect diet: ${profile.food_preference}. Country: ${profile.country}. Budget: ${profile.daily_budget}. Goal: ${profile.goal}. Activity: ${profile.activity_level}. Conditions: ${(profile.conditions ?? []).join(", ") || "none"}.${allergyClause(profile)} ${pantryText} ${groceryText}
+    const system = `You are a meal planning AI. Generate a personalized plan for the remaining meals of today. Fill these remaining gaps: ${remaining.calories.toFixed(0)}kcal, ${remaining.protein.toFixed(0)}g protein, ${remaining.carbs.toFixed(0)}g carbs, ${remaining.fat.toFixed(0)}g healthy fats, ${remaining.fiber.toFixed(0)}g fiber. Water target: ${targets.water_ml}ml/day. Respect diet: ${profile.food_preference}. Country: ${profile.country}. Budget: ${profile.daily_budget}. Goal: ${profile.goal}. Activity: ${profile.activity_level}. Conditions: ${(profile.conditions ?? []).join(", ") || "none"}.${allergyClause(profile)}${sportContext(profile)} ${pantryText} ${groceryText}
 Use fridge ingredients first. Prefer recipes from the latest fridge scan when they fit the gaps. If something is missing, add it to grocery items with "aisle" (Produce | Dairy & Eggs | Meat & Seafood | Bakery | Grains & Pasta | Canned & Jarred | Frozen | Snacks | Beverages | Condiments & Spices | Other) and 1-2 "substitutes" [{name, why}]. Include meal timing and recovery nutrition when relevant. Return ONLY JSON:
 
 {"meals":[{"slot":"Lunch"|"Snack"|"Dinner"|"Post-workout","name":string,"why":string,"gap_coverage":[string],"meal_timing":string,"recovery_note":string,"ingredients":[{"name":string,"amount":string}],"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number,"prep_minutes":number,"est_cost":number,"instructions":string}],"next_meal_recommendations":[{"name":string,"amount":string,"fixes":string,"prevents_gap":string,"nutrients_balanced":[string],"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number}],"grocery_items":[{"name":string,"amount":string,"reason":string,"nutrients":[string],"aisle":string,"substitutes":[{"name":string,"why":string}]}]}`;
@@ -561,7 +561,7 @@ export const suggestSubstitutes = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: profile } = await context.supabase
       .from("profiles").select("food_preference, allergies, conditions, country").eq("id", context.userId).maybeSingle();
-    const system = `Suggest 3 smart grocery substitutes for an out-of-stock item. Respect diet: ${profile?.food_preference ?? "any"}. Country: ${profile?.country ?? "any"}. Conditions: ${(profile?.conditions ?? []).join(", ") || "none"}.${allergyClause(profile)} Return ONLY JSON: {"substitutes":[{"name":string,"why":string (why it works nutritionally / culinarily)}]}`;
+    const system = `Suggest 3 smart grocery substitutes for an out-of-stock item. Respect diet: ${profile?.food_preference ?? "any"}. Country: ${profile?.country ?? "any"}. Conditions: ${(profile?.conditions ?? []).join(", ") || "none"}.${allergyClause(profile)}${sportContext(profile)} Return ONLY JSON: {"substitutes":[{"name":string,"why":string (why it works nutritionally / culinarily)}]}`;
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
       messages: [
@@ -655,7 +655,7 @@ export const scanFridge = createServerFn({ method: "POST" })
   "grocery_items": [{"name": string, "amount": string, "reason": string, "nutrients": [string]}],
   "best_pick": string (name of the single best meal_idea for right now)
 }
-Give 3-5 meal ideas, ranked best first. For each grocery_items/missing_staples/needs entry, set "aisle" (Produce | Dairy & Eggs | Meat & Seafood | Bakery | Grains & Pasta | Canned & Jarred | Frozen | Snacks | Beverages | Condiments & Spices | Other) and add 1-2 "substitutes" [{name, why}] so the user can swap when the store is out. ${profileCtx}${allergyClause(profile)}${data.note ? ` Note: ${data.note}` : ""}`;
+Give 3-5 meal ideas, ranked best first. For each grocery_items/missing_staples/needs entry, set "aisle" (Produce | Dairy & Eggs | Meat & Seafood | Bakery | Grains & Pasta | Canned & Jarred | Frozen | Snacks | Beverages | Condiments & Spices | Other) and add 1-2 "substitutes" [{name, why}] so the user can swap when the store is out. ${profileCtx}${allergyClause(profile)}${sportContext(profile)}${data.note ? ` Note: ${data.note}` : ""}`;
 
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
