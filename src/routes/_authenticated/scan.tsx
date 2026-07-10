@@ -240,7 +240,33 @@ function Scan() {
                   <div className="text-xs text-primary">Grade {result.grade}</div>
                 </div>
               </div>
+          </div>
+
+          {(result.foods ?? []).length > 0 && (
+            <div className="glass rounded-3xl p-5">
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
+                <Sparkles className="h-4 w-4" /> What the AI saw in your photo
+              </div>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Every recommendation below traces back to these detected items. Tap the image above to view full-size and verify.
+              </p>
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {result.foods.map((f, i) => (
+                  <li key={i} className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/30 p-3 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-[10px] font-mono text-primary">{i + 1}</span>
+                      <span className="font-semibold">{f.name}</span>
+                      <span className="text-muted-foreground">· {f.portion}</span>
+                    </div>
+                    <span className="font-mono text-primary">{Math.round(f.calories)} kcal</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 text-[10px] uppercase tracking-widest text-muted-foreground">
+                AI confidence: {(result.confidence * 100).toFixed(0)}%
+              </div>
             </div>
+          )}
           </div>
 
           <ul
