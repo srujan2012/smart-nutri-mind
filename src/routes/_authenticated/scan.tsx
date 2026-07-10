@@ -416,25 +416,44 @@ function Scan() {
                           </div>
                         </details>
                       </div>
-                      <button
-                        onClick={() => addToCurrentMeal(it, key)}
-                        disabled={added || addingKey === key || !mealId}
-                        title="Confirm to log this add-on onto your current meal"
-                        className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${
-                          added
-                            ? "bg-primary/20 text-primary"
-                            : "bg-primary text-primary-foreground glow-neon"
-                        } disabled:opacity-60`}
-                      >
-                        {added ? (<><Check className="mr-1 inline h-3 w-3" />Added</>) :
-                         addingKey === key ? "Adding…" : (<><Plus className="mr-1 inline h-3 w-3" />Add</>)}
-                      </button>
-                    </div>
-
-                  );
-                })}
-              </div>
-            </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        {previewKey === key && !added ? (
+                          <>
+                            <div className="rounded-xl border border-primary/40 bg-primary/10 p-2 text-right text-[10px] leading-tight text-foreground">
+                              <div className="font-semibold text-primary">Impact preview</div>
+                              <div className="font-mono">+{Math.round(it.calories)} kcal</div>
+                              <div className="font-mono">P +{Math.round(it.protein ?? 0)}g · C +{Math.round(it.carbs ?? 0)}g</div>
+                              <div className="font-mono">F +{Math.round(it.fat ?? 0)}g · Fib +{Math.round(it.fiber ?? 0)}g</div>
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => setPreviewKey(null)}
+                                className="rounded-full border border-border px-2 py-1 text-[10px]"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={() => { setPreviewKey(null); addToCurrentMeal(it, key); }}
+                                disabled={addingKey === key || !mealId}
+                                className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-primary-foreground glow-neon disabled:opacity-60"
+                              >
+                                {addingKey === key ? "Adding…" : "Confirm add"}
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => (added ? null : setPreviewKey(key))}
+                            disabled={added || addingKey === key || !mealId}
+                            title="Preview macro impact before adding to your current meal"
+                            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                              added ? "bg-primary/20 text-primary" : "bg-primary text-primary-foreground glow-neon"
+                            } disabled:opacity-60`}
+                          >
+                            {added ? (<><Check className="mr-1 inline h-3 w-3" />Added</>) : (<><Plus className="mr-1 inline h-3 w-3" />Preview & add</>)}
+                          </button>
+                        )}
+                      </div>
           )}
 
           {result.add_to_next_meal?.length > 0 && (
