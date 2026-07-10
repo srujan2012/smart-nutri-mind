@@ -29,6 +29,7 @@ function Scan() {
   const [mealId, setMealId] = useState<string | null>(null);
   const [addedKeys, setAddedKeys] = useState<Set<string>>(new Set());
   const [addingKey, setAddingKey] = useState<string | null>(null);
+  const [previewKey, setPreviewKey] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState(false);
 
   const onFile = async (file: File) => {
@@ -239,7 +240,33 @@ function Scan() {
                   <div className="text-xs text-primary">Grade {result.grade}</div>
                 </div>
               </div>
+          </div>
+
+          {(result.foods ?? []).length > 0 && (
+            <div className="glass rounded-3xl p-5">
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
+                <Sparkles className="h-4 w-4" /> What the AI saw in your photo
+              </div>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Every recommendation below traces back to these detected items. Tap the image above to view full-size and verify.
+              </p>
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {result.foods.map((f, i) => (
+                  <li key={i} className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/30 p-3 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-[10px] font-mono text-primary">{i + 1}</span>
+                      <span className="font-semibold">{f.name}</span>
+                      <span className="text-muted-foreground">· {f.portion}</span>
+                    </div>
+                    <span className="font-mono text-primary">{Math.round(f.calories)} kcal</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 text-[10px] uppercase tracking-widest text-muted-foreground">
+                AI confidence: {(result.confidence * 100).toFixed(0)}%
+              </div>
             </div>
+          )}
           </div>
 
           <ul
@@ -389,21 +416,45 @@ function Scan() {
                           </div>
                         </details>
                       </div>
-                      <button
-                        onClick={() => addToCurrentMeal(it, key)}
-                        disabled={added || addingKey === key || !mealId}
-                        title="Confirm to log this add-on onto your current meal"
-                        className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${
-                          added
-                            ? "bg-primary/20 text-primary"
-                            : "bg-primary text-primary-foreground glow-neon"
-                        } disabled:opacity-60`}
-                      >
-                        {added ? (<><Check className="mr-1 inline h-3 w-3" />Added</>) :
-                         addingKey === key ? "Adding…" : (<><Plus className="mr-1 inline h-3 w-3" />Add</>)}
-                      </button>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        {previewKey === key && !added ? (
+                          <>
+                            <div className="rounded-xl border border-primary/40 bg-primary/10 p-2 text-right text-[10px] leading-tight text-foreground">
+                              <div className="font-semibold text-primary">Impact preview</div>
+                              <div className="font-mono">+{Math.round(it.calories)} kcal</div>
+                              <div className="font-mono">P +{Math.round(it.protein ?? 0)}g · C +{Math.round(it.carbs ?? 0)}g</div>
+                              <div className="font-mono">F +{Math.round(it.fat ?? 0)}g · Fib +{Math.round(it.fiber ?? 0)}g</div>
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => setPreviewKey(null)}
+                                className="rounded-full border border-border px-2 py-1 text-[10px]"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={() => { setPreviewKey(null); addToCurrentMeal(it, key); }}
+                                disabled={addingKey === key || !mealId}
+                                className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-primary-foreground glow-neon disabled:opacity-60"
+                              >
+                                {addingKey === key ? "Adding…" : "Confirm add"}
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => (added ? null : setPreviewKey(key))}
+                            disabled={added || addingKey === key || !mealId}
+                            title="Preview macro impact before adding to your current meal"
+                            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                              added ? "bg-primary/20 text-primary" : "bg-primary text-primary-foreground glow-neon"
+                            } disabled:opacity-60`}
+                          >
+                            {added ? (<><Check className="mr-1 inline h-3 w-3" />Added</>) : (<><Plus className="mr-1 inline h-3 w-3" />Preview & add</>)}
+                          </button>
+                        )}
+                      </div>
                     </div>
-
                   );
                 })}
               </div>
