@@ -130,13 +130,19 @@ function Fridge() {
       {result && (
         <div className="space-y-4">
           <div className="glass-strong overflow-hidden rounded-3xl">
-            <img src={preview!} alt="" className="w-full max-h-56 object-cover" />
+            <img src={preview!} alt="Fridge scan source" className="w-full max-h-56 object-cover" />
             <div className="p-5">
-              <div className="text-xs text-muted-foreground">Detected {result.items.length} ingredients</div>
-              <div className="mt-2 flex flex-wrap gap-1">
+              <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                <Sparkles className="h-3 w-3" /> AI vision — detected in your photo ({result.items.length})
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Every meal idea and grocery suggestion below is derived from these items. Verify against your photo above.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-1">
                 {result.items.map((it, i) => (
                   <span
                     key={i}
+                    title={`Category: ${it.category} · Freshness: ${it.freshness}`}
                     className={`rounded-full px-3 py-1 text-xs ${
                       it.freshness === "use-soon"
                         ? "bg-warning/15 text-warning"
