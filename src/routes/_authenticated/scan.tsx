@@ -454,6 +454,11 @@ function Scan() {
                           </button>
                         )}
                       </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
           {result.add_to_next_meal?.length > 0 && (
