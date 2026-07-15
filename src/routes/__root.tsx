@@ -80,14 +80,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "NutriMind AI is a personal AI nutritionist. Scan meals, get explainable nutrition scores, adaptive meal plans, and 24/7 coaching.",
       },
       { name: "theme-color", content: "#0A0F0D" },
-      { property: "og:title", content: "NutriMind AI — Your AI Nutrition OS" },
+      { property: "og:title", content: "NutriMind AI — Your AI Nutrition Operating System" },
       {
         property: "og:description",
         content:
-          "Scan any meal. Get instant AI nutrition analysis, personalized to your body, goals, and health profile.",
+          "NutriMind AI is a personal AI nutritionist. Scan meals, get explainable nutrition scores, adaptive meal plans, and 24/7 coaching.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "NutriMind AI — Your AI Nutrition Operating System" },
+      { name: "twitter:description", content: "NutriMind AI is a personal AI nutritionist. Scan meals, get explainable nutrition scores, adaptive meal plans, and 24/7 coaching." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/74a9bbfa-e113-4d68-b424-40a5bca15d3d/id-preview-83830753--45425852-3c07-440f-9fa9-310460089c00.lovable.app-1783652196128.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/74a9bbfa-e113-4d68-b424-40a5bca15d3d/id-preview-83830753--45425852-3c07-440f-9fa9-310460089c00.lovable.app-1783652196128.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
