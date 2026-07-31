@@ -21,6 +21,7 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedGroceryRouteImport } from './routes/_authenticated/grocery'
 import { Route as AuthenticatedFridgeRouteImport } from './routes/_authenticated/fridge'
+import { Route as AuthenticatedFoodsRouteImport } from './routes/_authenticated/foods'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 
@@ -83,6 +84,11 @@ const AuthenticatedFridgeRoute = AuthenticatedFridgeRouteImport.update({
   path: '/fridge',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFoodsRoute = AuthenticatedFoodsRouteImport.update({
+  id: '/foods',
+  path: '/foods',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/foods': typeof AuthenticatedFoodsRoute
   '/fridge': typeof AuthenticatedFridgeRoute
   '/grocery': typeof AuthenticatedGroceryRoute
   '/history': typeof AuthenticatedHistoryRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/foods': typeof AuthenticatedFoodsRoute
   '/fridge': typeof AuthenticatedFridgeRoute
   '/grocery': typeof AuthenticatedGroceryRoute
   '/history': typeof AuthenticatedHistoryRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/foods': typeof AuthenticatedFoodsRoute
   '/_authenticated/fridge': typeof AuthenticatedFridgeRoute
   '/_authenticated/grocery': typeof AuthenticatedGroceryRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chat'
     | '/dashboard'
+    | '/foods'
     | '/fridge'
     | '/grocery'
     | '/history'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chat'
     | '/dashboard'
+    | '/foods'
     | '/fridge'
     | '/grocery'
     | '/history'
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/chat'
     | '/_authenticated/dashboard'
+    | '/_authenticated/foods'
     | '/_authenticated/fridge'
     | '/_authenticated/grocery'
     | '/_authenticated/history'
@@ -282,6 +294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFridgeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/foods': {
+      id: '/_authenticated/foods'
+      path: '/foods'
+      fullPath: '/foods'
+      preLoaderRoute: typeof AuthenticatedFoodsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -302,6 +321,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedFoodsRoute: typeof AuthenticatedFoodsRoute
   AuthenticatedFridgeRoute: typeof AuthenticatedFridgeRoute
   AuthenticatedGroceryRoute: typeof AuthenticatedGroceryRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
@@ -316,6 +336,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedFoodsRoute: AuthenticatedFoodsRoute,
   AuthenticatedFridgeRoute: AuthenticatedFridgeRoute,
   AuthenticatedGroceryRoute: AuthenticatedGroceryRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
