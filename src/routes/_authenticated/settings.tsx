@@ -140,7 +140,6 @@ function SettingsPage() {
         .from("profiles")
         .update({
           ...form,
-          theme,
           calorie_target: t.calories,
           protein_target: t.protein,
           carbs_target: t.carbs,
