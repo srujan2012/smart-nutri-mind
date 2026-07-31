@@ -37,6 +37,16 @@ const ACTIVITIES: { value: ActivityLevel; label: string }[] = [
   { value: "athlete", label: "Athlete" },
 ];
 
+const FITNESS_LEVELS = ["Beginner", "Intermediate", "Advanced", "Elite"];
+const EQUIPMENT = [
+  "None / bodyweight","Dumbbells","Barbell + rack","Resistance bands","Kettlebells",
+  "Pull-up bar","Full gym","Treadmill","Stationary bike","Yoga mat","Pool","Track",
+];
+const FOCUS_GOALS = [
+  "Healthy weight management","Strength","Muscle development","Endurance",
+  "General fitness","Mobility","Sports performance","Recovery","Healthy growth & development",
+];
+
 function Chip({
   active, children, onClick,
 }: { active: boolean; children: React.ReactNode; onClick: () => void }) {
@@ -85,6 +95,12 @@ function Onboarding() {
   const [training_hours_per_day, setTrainHours] = useState<number>(1);
   const [wake_time, setWake] = useState<string>("07:00");
   const [sleep_time, setSleep] = useState<string>("23:00");
+  const [fitness_level, setFitnessLevel] = useState("Beginner");
+  const [equipment, setEquipment] = useState<string[]>([]);
+  const [goals, setGoals] = useState<string[]>(["General fitness"]);
+  const [daily_schedule, setSchedule] = useState("");
+  const [consent_ai, setConsentAi] = useState(true);
+  const [consent_analytics, setConsentAnalytics] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const toggle = (arr: string[], v: string, set: (a: string[]) => void) => {
@@ -117,6 +133,9 @@ function Onboarding() {
           medications: meds,
           allergies,
           goal, activity_level: activity,
+          fitness_level, equipment, goals, daily_schedule,
+          consent_ai, consent_analytics,
+          reminders_enabled: true,
           calorie_target: targets.calories,
           protein_target: targets.protein,
           carbs_target: targets.carbs,
@@ -144,7 +163,7 @@ function Onboarding() {
   };
 
   const steps = [
-    "Basics", "Body", "Lifestyle", "Diet & Health", "Goal", "Athlete", "Preview",
+    "Basics", "Body", "Lifestyle", "Diet & Health", "Goals", "Athlete", "Preview",
   ];
 
   return (
@@ -258,6 +277,31 @@ function Onboarding() {
                 </Chip>
               ))}
             </div>
+            <div>
+              <div className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Fitness level</div>
+              <div className="flex flex-wrap gap-2">
+                {FITNESS_LEVELS.map((f) => (
+                  <Chip key={f} active={fitness_level === f} onClick={() => setFitnessLevel(f)}>{f}</Chip>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Available equipment</div>
+              <div className="flex flex-wrap gap-2">
+                {EQUIPMENT.map((e) => (
+                  <Chip key={e} active={equipment.includes(e)} onClick={() => toggle(equipment, e, setEquipment)}>{e}</Chip>
+                ))}
+              </div>
+            </div>
+            <label className="block space-y-1">
+              <span className="text-xs text-muted-foreground">Daily schedule (classes, work, training, meals)</span>
+              <input
+                value={daily_schedule}
+                onChange={(e) => setSchedule(e.target.value)}
+                placeholder="e.g. College 9–4, gym 6pm, dinner 8:30pm"
+                className="w-full rounded-2xl border border-border bg-input/40 px-4 py-3 text-sm focus:border-primary focus:outline-none"
+              />
+            </label>
             <label className="mt-4 block space-y-1">
               <span className="text-xs text-muted-foreground">Daily food budget (local currency)</span>
               <input
@@ -310,7 +354,8 @@ function Onboarding() {
 
         {step === 4 && (
           <div className="space-y-4">
-            <h2 className="font-display text-2xl font-bold">Your goal</h2>
+            <h2 className="font-display text-2xl font-bold">Your goals</h2>
+            <p className="text-sm text-muted-foreground">Primary nutrition goal drives your calorie target.</p>
             <div className="grid grid-cols-2 gap-3">
               {GOALS.map((g) => (
                 <button
@@ -328,6 +373,20 @@ function Onboarding() {
                 </button>
               ))}
             </div>
+            <div>
+              <div className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">
+                Focus areas (pick any)
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {FOCUS_GOALS.map((g) => (
+                  <Chip key={g} active={goals.includes(g)} onClick={() => toggle(goals, g, setGoals)}>{g}</Chip>
+                ))}
+              </div>
+            </div>
+            <p className="rounded-2xl bg-warning/10 p-3 text-[11px] text-muted-foreground">
+              We show estimated trend ranges, never exact dates or guaranteed body or height outcomes — individual
+              results vary with genetics, sleep, stress and adherence.
+            </p>
           </div>
         )}
 
@@ -435,6 +494,18 @@ function Onboarding() {
             </div>
             <div className="rounded-2xl bg-accent/10 p-4 text-sm text-accent">
               Water target: ~{targets.water_ml} ml/day
+            </div>
+            <div className="space-y-2 rounded-2xl border border-border p-4">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Consent</div>
+              <label className="flex items-start gap-2 text-xs">
+                <input type="checkbox" checked={consent_ai} onChange={(e) => setConsentAi(e.target.checked)} className="mt-0.5" />
+                Allow my photos and profile to be analysed by the AI coach (required for scanning).
+              </label>
+              <label className="flex items-start gap-2 text-xs">
+                <input type="checkbox" checked={consent_analytics} onChange={(e) => setConsentAnalytics(e.target.checked)} className="mt-0.5" />
+                Share anonymous usage analytics to improve the app (optional).
+              </label>
+              <div className="text-[11px] text-muted-foreground">You can change these any time in Settings.</div>
             </div>
             {sport !== "None" && (
               <div className="rounded-2xl bg-primary/10 p-4 text-sm">
