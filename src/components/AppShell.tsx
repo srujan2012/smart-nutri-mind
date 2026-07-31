@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { LogOut, LayoutDashboard, Camera, Refrigerator, ChefHat, MessageSquare, User, ShoppingCart } from "lucide-react";
+import { LogOut, LayoutDashboard, Camera, Refrigerator, ChefHat, MessageSquare, User, ShoppingCart, Dumbbell, Settings } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,8 +9,10 @@ const nav = [
   { to: "/fridge", icon: Refrigerator, label: "Fridge" },
   { to: "/planner", icon: ChefHat, label: "Plan" },
   { to: "/grocery", icon: ShoppingCart, label: "List" },
+  { to: "/train", icon: Dumbbell, label: "Train" },
   { to: "/chat", icon: MessageSquare, label: "Coach" },
   { to: "/profile", icon: User, label: "Me" },
+  { to: "/settings", icon: Settings, label: "Settings" },
 ] as const;
 
 
@@ -37,7 +39,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               NutriMind<span className="text-primary">.</span>
             </span>
           </Link>
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-1 overflow-x-auto">
             {nav.map((n) => (
               <Link
                 key={n.to}
@@ -66,15 +68,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Mobile nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden glass-strong border-t border-border/60">
-        <div className="grid grid-cols-7">
+        <div className="flex overflow-x-auto no-scrollbar">
 
           {nav.map((n) => (
             <Link
               key={n.to}
               to={n.to}
-              className="flex flex-col items-center gap-1 py-3 text-xs text-muted-foreground"
+              className="flex min-w-[4.25rem] flex-1 flex-col items-center gap-1 py-3 text-xs text-muted-foreground"
               activeProps={{
-                className: "flex flex-col items-center gap-1 py-3 text-xs text-primary",
+                className: "flex min-w-[4.25rem] flex-1 flex-col items-center gap-1 py-3 text-xs text-primary",
               }}
             >
               <n.icon className="h-5 w-5" />
