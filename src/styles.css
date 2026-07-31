@@ -227,3 +227,11 @@ html.light {
 
 .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; }
 .animate-float { animation: float 4s ease-in-out infinite; }
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
