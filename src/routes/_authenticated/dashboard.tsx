@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { NutrientRing } from "@/components/NutrientRing";
+import { DailyVitals } from "@/components/DailyVitals";
 import { Camera, MessageSquare, ChefHat, TrendingUp, Sparkles, Award, Droplets, Clock, HeartPulse, Target, Flame, Beef, Wheat, Salad, Nut } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -103,6 +104,14 @@ function Dashboard() {
           <Camera className="h-4 w-4" /> Scan meal
         </Link>
       </div>
+
+      {/* Vitals: hydration, sleep, readiness, streak, next best action */}
+      <DailyVitals
+        profile={profile}
+        mealsLogged={meals?.length ?? 0}
+        caloriesLogged={totals.calories}
+        calorieTarget={profile?.calorie_target ?? 2000}
+      />
 
       {/* Rings row */}
       <div className="glass-strong rounded-3xl p-6">

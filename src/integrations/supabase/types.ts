@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_metrics: {
+        Row: {
+          created_at: string
+          id: string
+          log_date: string
+          mood: number | null
+          notes: string | null
+          readiness: number | null
+          sleep_hours: number | null
+          soreness: number | null
+          updated_at: string
+          user_id: string
+          water_ml: number
+          weight_kg: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          log_date: string
+          mood?: number | null
+          notes?: string | null
+          readiness?: number | null
+          sleep_hours?: number | null
+          soreness?: number | null
+          updated_at?: string
+          user_id: string
+          water_ml?: number
+          weight_kg?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          log_date?: string
+          mood?: number | null
+          notes?: string | null
+          readiness?: number | null
+          sleep_hours?: number | null
+          soreness?: number | null
+          updated_at?: string
+          user_id?: string
+          water_ml?: number
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
       grocery_items: {
         Row: {
           aisle: string
@@ -161,24 +206,33 @@ export type Database = {
           carbs_target: number | null
           competition_level: string | null
           conditions: string[] | null
+          consent_ai: boolean
+          consent_analytics: boolean
           country: string | null
           created_at: string
           daily_budget: number | null
+          daily_schedule: string | null
+          equipment: string[]
           fat_target: number | null
           fiber_target: number | null
+          fitness_level: string | null
           food_preference: string | null
           full_name: string | null
           gender: string | null
           goal: string | null
+          goals: string[]
           height_cm: number | null
           id: string
           lifestyle: string[] | null
           medications: string[] | null
           onboarded: boolean
           protein_target: number | null
+          reminder_times: Json
+          reminders_enabled: boolean
           sleep_time: string | null
           sport: string | null
           sport_position: string | null
+          theme: string
           timezone: string | null
           training_days_per_week: number | null
           training_hours_per_day: number | null
@@ -194,24 +248,33 @@ export type Database = {
           carbs_target?: number | null
           competition_level?: string | null
           conditions?: string[] | null
+          consent_ai?: boolean
+          consent_analytics?: boolean
           country?: string | null
           created_at?: string
           daily_budget?: number | null
+          daily_schedule?: string | null
+          equipment?: string[]
           fat_target?: number | null
           fiber_target?: number | null
+          fitness_level?: string | null
           food_preference?: string | null
           full_name?: string | null
           gender?: string | null
           goal?: string | null
+          goals?: string[]
           height_cm?: number | null
           id: string
           lifestyle?: string[] | null
           medications?: string[] | null
           onboarded?: boolean
           protein_target?: number | null
+          reminder_times?: Json
+          reminders_enabled?: boolean
           sleep_time?: string | null
           sport?: string | null
           sport_position?: string | null
+          theme?: string
           timezone?: string | null
           training_days_per_week?: number | null
           training_hours_per_day?: number | null
@@ -227,30 +290,87 @@ export type Database = {
           carbs_target?: number | null
           competition_level?: string | null
           conditions?: string[] | null
+          consent_ai?: boolean
+          consent_analytics?: boolean
           country?: string | null
           created_at?: string
           daily_budget?: number | null
+          daily_schedule?: string | null
+          equipment?: string[]
           fat_target?: number | null
           fiber_target?: number | null
+          fitness_level?: string | null
           food_preference?: string | null
           full_name?: string | null
           gender?: string | null
           goal?: string | null
+          goals?: string[]
           height_cm?: number | null
           id?: string
           lifestyle?: string[] | null
           medications?: string[] | null
           onboarded?: boolean
           protein_target?: number | null
+          reminder_times?: Json
+          reminders_enabled?: boolean
           sleep_time?: string | null
           sport?: string | null
           sport_position?: string | null
+          theme?: string
           timezone?: string | null
           training_days_per_week?: number | null
           training_hours_per_day?: number | null
           updated_at?: string
           wake_time?: string | null
           weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      workouts: {
+        Row: {
+          blocks: Json
+          calories_burned: number | null
+          completed: boolean
+          created_at: string
+          duration_min: number
+          id: string
+          intensity: string
+          name: string
+          notes: string | null
+          scheduled_for: string
+          updated_at: string
+          user_id: string
+          workout_type: string
+        }
+        Insert: {
+          blocks?: Json
+          calories_burned?: number | null
+          completed?: boolean
+          created_at?: string
+          duration_min?: number
+          id?: string
+          intensity?: string
+          name: string
+          notes?: string | null
+          scheduled_for?: string
+          updated_at?: string
+          user_id: string
+          workout_type?: string
+        }
+        Update: {
+          blocks?: Json
+          calories_burned?: number | null
+          completed?: boolean
+          created_at?: string
+          duration_min?: number
+          id?: string
+          intensity?: string
+          name?: string
+          notes?: string | null
+          scheduled_for?: string
+          updated_at?: string
+          user_id?: string
+          workout_type?: string
         }
         Relationships: []
       }
