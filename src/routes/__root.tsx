@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "sonner";
+import { applyTheme, type Theme } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
@@ -121,6 +122,11 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  useEffect(() => {
+    const stored = (localStorage.getItem("nutrimind-theme") as Theme | null) ?? "dark";
+    applyTheme(stored);
+  }, []);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
