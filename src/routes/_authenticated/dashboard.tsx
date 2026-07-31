@@ -113,6 +113,10 @@ function Dashboard() {
         calorieTarget={profile?.calorie_target ?? 2000}
       />
 
+      <AdaptiveTargets />
+
+
+
       {/* Rings row */}
       <div className="glass-strong rounded-3xl p-6">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
