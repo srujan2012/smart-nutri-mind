@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { NutrientRing } from "@/components/NutrientRing";
 import { DailyVitals } from "@/components/DailyVitals";
+import { AdaptiveTargets } from "@/components/AdaptiveTargets";
+
 import { Camera, MessageSquare, ChefHat, TrendingUp, Sparkles, Award, Droplets, Clock, HeartPulse, Target, Flame, Beef, Wheat, Salad, Nut } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -112,6 +114,10 @@ function Dashboard() {
         caloriesLogged={totals.calories}
         calorieTarget={profile?.calorie_target ?? 2000}
       />
+
+      <AdaptiveTargets />
+
+
 
       {/* Rings row */}
       <div className="glass-strong rounded-3xl p-6">

@@ -59,6 +59,105 @@ export type Database = {
         }
         Relationships: []
       }
+      foods: {
+        Row: {
+          allergens: string[]
+          barcode: string | null
+          brand: string | null
+          calories: number
+          carbs: number
+          category: string
+          confidence: string
+          created_at: string
+          created_by: string | null
+          cuisine: string | null
+          data_source: string
+          diet_tags: string[]
+          est_cost: number | null
+          fat: number
+          fiber: number
+          food_type: string
+          id: string
+          ingredients: string[]
+          micros: Json
+          name: string
+          protein: number
+          recipe_steps: string[]
+          region: string | null
+          serving_desc: string
+          serving_grams: number
+          sodium_mg: number | null
+          source_url: string | null
+          sugar: number | null
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          allergens?: string[]
+          barcode?: string | null
+          brand?: string | null
+          calories?: number
+          carbs?: number
+          category?: string
+          confidence?: string
+          created_at?: string
+          created_by?: string | null
+          cuisine?: string | null
+          data_source?: string
+          diet_tags?: string[]
+          est_cost?: number | null
+          fat?: number
+          fiber?: number
+          food_type?: string
+          id?: string
+          ingredients?: string[]
+          micros?: Json
+          name: string
+          protein?: number
+          recipe_steps?: string[]
+          region?: string | null
+          serving_desc?: string
+          serving_grams?: number
+          sodium_mg?: number | null
+          source_url?: string | null
+          sugar?: number | null
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          allergens?: string[]
+          barcode?: string | null
+          brand?: string | null
+          calories?: number
+          carbs?: number
+          category?: string
+          confidence?: string
+          created_at?: string
+          created_by?: string | null
+          cuisine?: string | null
+          data_source?: string
+          diet_tags?: string[]
+          est_cost?: number | null
+          fat?: number
+          fiber?: number
+          food_type?: string
+          id?: string
+          ingredients?: string[]
+          micros?: Json
+          name?: string
+          protein?: number
+          recipe_steps?: string[]
+          region?: string | null
+          serving_desc?: string
+          serving_grams?: number
+          sodium_mg?: number | null
+          source_url?: string | null
+          sugar?: number | null
+          updated_at?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       grocery_items: {
         Row: {
           aisle: string
@@ -193,6 +292,51 @@ export type Database = {
           missing_staples?: Json
           note?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      plan_adjustments: {
+        Row: {
+          adherence_pct: number | null
+          applied_on: string
+          created_at: string
+          id: string
+          new_calories: number | null
+          new_protein: number | null
+          old_calories: number | null
+          old_protein: number | null
+          reason: string
+          safety_note: string | null
+          trend_kg_per_week: number | null
+          user_id: string
+        }
+        Insert: {
+          adherence_pct?: number | null
+          applied_on?: string
+          created_at?: string
+          id?: string
+          new_calories?: number | null
+          new_protein?: number | null
+          old_calories?: number | null
+          old_protein?: number | null
+          reason: string
+          safety_note?: string | null
+          trend_kg_per_week?: number | null
+          user_id: string
+        }
+        Update: {
+          adherence_pct?: number | null
+          applied_on?: string
+          created_at?: string
+          id?: string
+          new_calories?: number | null
+          new_protein?: number | null
+          old_calories?: number | null
+          old_protein?: number | null
+          reason?: string
+          safety_note?: string | null
+          trend_kg_per_week?: number | null
           user_id?: string
         }
         Relationships: []
