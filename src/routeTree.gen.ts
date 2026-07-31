@@ -22,6 +22,7 @@ import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedGroceryRouteImport } from './routes/_authenticated/grocery'
 import { Route as AuthenticatedFridgeRouteImport } from './routes/_authenticated/fridge'
 import { Route as AuthenticatedFoodsRouteImport } from './routes/_authenticated/foods'
+import { Route as AuthenticatedDetoxRouteImport } from './routes/_authenticated/detox'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 
@@ -89,6 +90,11 @@ const AuthenticatedFoodsRoute = AuthenticatedFoodsRouteImport.update({
   path: '/foods',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDetoxRoute = AuthenticatedDetoxRouteImport.update({
+  id: '/detox',
+  path: '/detox',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/detox': typeof AuthenticatedDetoxRoute
   '/foods': typeof AuthenticatedFoodsRoute
   '/fridge': typeof AuthenticatedFridgeRoute
   '/grocery': typeof AuthenticatedGroceryRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/detox': typeof AuthenticatedDetoxRoute
   '/foods': typeof AuthenticatedFoodsRoute
   '/fridge': typeof AuthenticatedFridgeRoute
   '/grocery': typeof AuthenticatedGroceryRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/detox': typeof AuthenticatedDetoxRoute
   '/_authenticated/foods': typeof AuthenticatedFoodsRoute
   '/_authenticated/fridge': typeof AuthenticatedFridgeRoute
   '/_authenticated/grocery': typeof AuthenticatedGroceryRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chat'
     | '/dashboard'
+    | '/detox'
     | '/foods'
     | '/fridge'
     | '/grocery'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chat'
     | '/dashboard'
+    | '/detox'
     | '/foods'
     | '/fridge'
     | '/grocery'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/chat'
     | '/_authenticated/dashboard'
+    | '/_authenticated/detox'
     | '/_authenticated/foods'
     | '/_authenticated/fridge'
     | '/_authenticated/grocery'
@@ -301,6 +313,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFoodsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/detox': {
+      id: '/_authenticated/detox'
+      path: '/detox'
+      fullPath: '/detox'
+      preLoaderRoute: typeof AuthenticatedDetoxRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -321,6 +340,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDetoxRoute: typeof AuthenticatedDetoxRoute
   AuthenticatedFoodsRoute: typeof AuthenticatedFoodsRoute
   AuthenticatedFridgeRoute: typeof AuthenticatedFridgeRoute
   AuthenticatedGroceryRoute: typeof AuthenticatedGroceryRoute
@@ -336,6 +356,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDetoxRoute: AuthenticatedDetoxRoute,
   AuthenticatedFoodsRoute: AuthenticatedFoodsRoute,
   AuthenticatedFridgeRoute: AuthenticatedFridgeRoute,
   AuthenticatedGroceryRoute: AuthenticatedGroceryRoute,
