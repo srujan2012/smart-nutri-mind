@@ -1,43 +1,60 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { localDateKey } from "@/components/DailyVitals";
-import { toast } from "sonner";
-import { Dumbbell, Plus, Check, Trash2, Timer, Flame } from "lucide-react";
+import { addDays, prettyDay, startOfWeek } from "@/lib/dates";
+import { TrainingPlanCard } from "@/components/TrainingPlanCard";
+import { WorkoutLogger, emptyDraft, makeDraftFromPlanDay, type Draft } from "@/components/WorkoutLogger";
+import { ProgressTrend } from "@/components/ProgressTrend";
+import { CalendarDays, Dumbbell, LineChart, Moon, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/train")({
   head: () => ({
     meta: [
-      { title: "Training log — NutriMind AI" },
-      { name: "description", content: "Plan and log workouts, then fuel them with matched nutrition targets." },
-      { property: "og:title", content: "Training log — NutriMind AI" },
-      { property: "og:description", content: "Plan and log workouts, then fuel them with matched nutrition targets." },
+      { title: "Training plan & log — NutriMind AI" },
+      { name: "description", content: "Adaptive training plans, a workout calendar, set-by-set logging with RPE, safe progressive overload and honest progress trends." },
+      { property: "og:title", content: "Training plan & log — NutriMind AI" },
+      { property: "og:description", content: "Adaptive plans built from your goal, level, equipment and recovery — with logging, progressive overload and trend ranges." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: TrainPage,
 });
 
-const TYPES = ["strength", "endurance", "mobility", "sport practice", "match", "recovery"];
-const INTENSITIES = ["easy", "moderate", "hard", "max"];
-
-const field =
-  "w-full rounded-2xl border border-border bg-input/40 px-4 py-3 text-sm focus:border-primary focus:outline-none";
+type Tab = "plan" | "log" | "progress";
 
 function TrainPage() {
-  const qc = useQueryClient();
+  const [tab, setTab] = useState<Tab>("plan");
+  const [draft, setDraft] = useState<Draft>(emptyDraft);
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return null;
-      const { data } = await supabase.from("profiles").select("*").eq("id", u.user.id).maybeSingle();
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return null;
+      const { data } = await supabase.from("profiles").select("*").eq("id", auth.user.id).maybeSingle();
       return data;
     },
   });
 
   const today = localDateKey(profile?.timezone);
+  const [selected, setSelected] = useState(today);
+
+  const { data: plan } = useQuery({
+    queryKey: ["training-plan"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("training_plans")
+        .select("*")
+        .eq("active", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
 
   const { data: workouts } = useQuery({
     queryKey: ["workouts"],
@@ -46,172 +63,185 @@ function TrainPage() {
         .from("workouts")
         .select("*")
         .order("scheduled_for", { ascending: false })
-        .limit(60);
+        .limit(120);
       return data ?? [];
     },
   });
 
-  const [form, setForm] = useState({
-    name: "",
-    workout_type: "strength",
-    intensity: "moderate",
-    duration_min: 45,
-    scheduled_for: today,
-    notes: "",
+  const { data: metrics } = useQuery({
+    queryKey: ["metrics-weight"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("daily_metrics")
+        .select("log_date, weight_kg")
+        .not("weight_kg", "is", null)
+        .order("log_date", { ascending: true })
+        .limit(120);
+      return data ?? [];
+    },
   });
-  const [saving, setSaving] = useState(false);
 
-  const add = async () => {
-    if (!form.name.trim()) return toast.error("Give the session a name");
-    setSaving(true);
-    try {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) throw new Error("Not signed in");
-      const { error } = await supabase.from("workouts").insert({ ...form, user_id: u.user.id });
-      if (error) throw error;
-      setForm({ ...form, name: "", notes: "" });
-      qc.invalidateQueries({ queryKey: ["workouts"] });
-      toast.success("Session added");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not save");
-    } finally {
-      setSaving(false);
+  const byDay = useMemo(() => {
+    const m = new Map<string, typeof workouts extends undefined ? never : NonNullable<typeof workouts>>();
+    for (const w of workouts ?? []) {
+      const key = String(w.scheduled_for).slice(0, 10);
+      const arr = m.get(key) ?? [];
+      arr.push(w);
+      m.set(key, arr);
     }
-  };
+    return m;
+  }, [workouts]);
 
-  const toggle = async (id: string, completed: boolean) => {
-    await supabase.from("workouts").update({ completed: !completed }).eq("id", id);
-    qc.invalidateQueries({ queryKey: ["workouts"] });
-  };
+  const weekStart = startOfWeek(selected);
+  const week = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const thisWeekStart = startOfWeek(today);
+  const sessionsThisWeek = (workouts ?? []).filter(
+    (w) => !w.rest_day && String(w.scheduled_for).slice(0, 10) >= thisWeekStart,
+  ).length;
 
-  const remove = async (id: string) => {
-    await supabase.from("workouts").delete().eq("id", id);
-    qc.invalidateQueries({ queryKey: ["workouts"] });
-  };
+  const streakDays = useMemo(() => {
+    let n = 0;
+    let cursor = today;
+    for (let i = 0; i < 90; i++) {
+      if ((byDay.get(cursor)?.length ?? 0) > 0) n++;
+      else if (i > 0) break;
+      cursor = addDays(cursor, -1);
+    }
+    return n;
+  }, [byDay, today]);
 
-  const todays = (workouts ?? []).filter((w) => w.scheduled_for === today);
-  const past = (workouts ?? []).filter((w) => w.scheduled_for !== today);
+  const planDays = (Array.isArray(plan?.week) ? plan?.week : []) as {
+    day: string; title: string; focus: string; rest_day: boolean; duration_min: number;
+    blocks: { exercise: string; sets: number; reps: string; rest_sec: number; why: string }[]; note: string;
+  }[];
+
+  const tabs: { id: Tab; label: string; icon: typeof Dumbbell }[] = [
+    { id: "plan", label: "My plan", icon: Dumbbell },
+    { id: "log", label: "Calendar & log", icon: CalendarDays },
+    { id: "progress", label: "Progress", icon: LineChart },
+  ];
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 text-xs text-primary">
-            <Dumbbell className="h-3 w-3" /> Training
-          </div>
-          <h1 className="truncate font-display text-2xl font-bold">Sessions & recovery</h1>
+    <div className="mx-auto max-w-5xl space-y-5">
+      <header>
+        <div className="flex items-center gap-2 text-xs text-primary">
+          <Dumbbell className="h-3 w-3" /> Training
         </div>
+        <h1 className="font-display text-2xl font-bold">Train with a reason for every set</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Your week adapts when your goal, level, schedule, equipment, sport or feedback changes — and every change is explained.
+        </p>
       </header>
 
-      <section className="glass-strong rounded-3xl p-6">
-        <h2 className="mb-4 font-display text-lg font-semibold">Add a session</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <input
-            className={field}
-            placeholder="Session name (e.g. Upper body push)"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            aria-label="Session name"
-          />
-          <input
-            type="date"
-            className={field}
-            value={form.scheduled_for}
-            onChange={(e) => setForm({ ...form, scheduled_for: e.target.value })}
-            aria-label="Session date"
-          />
-          <select className={field} value={form.workout_type} onChange={(e) => setForm({ ...form, workout_type: e.target.value })} aria-label="Session type">
-            {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-          <select className={field} value={form.intensity} onChange={(e) => setForm({ ...form, intensity: e.target.value })} aria-label="Intensity">
-            {INTENSITIES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-          <label className="space-y-1 sm:col-span-2">
-            <span className="text-xs text-muted-foreground">Duration: {form.duration_min} min</span>
-            <input
-              type="range"
-              min={10}
-              max={180}
-              step={5}
-              value={form.duration_min}
-              onChange={(e) => setForm({ ...form, duration_min: +e.target.value })}
-              className="w-full accent-[var(--primary)]"
-              aria-label="Duration in minutes"
-            />
-          </label>
-          <input
-            className={`${field} sm:col-span-2`}
-            placeholder="Notes (optional)"
-            value={form.notes}
-            onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            aria-label="Session notes"
-          />
-        </div>
-        <button
-          onClick={add}
-          disabled={saving}
-          className="mt-4 flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground glow-neon disabled:opacity-60"
-        >
-          <Plus className="h-4 w-4" /> {saving ? "Saving…" : "Add session"}
-        </button>
-        <p className="mt-3 text-[11px] text-muted-foreground">
-          Calories burned are not estimated automatically — that needs a verified device or heart-rate source.
-          Connect one later and this will fill in.
-        </p>
-      </section>
+      <div role="tablist" aria-label="Training sections" className="glass flex gap-1 rounded-full p-1">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={tab === t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition-colors ${
+              tab === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+            }`}
+          >
+            <t.icon className="h-3.5 w-3.5" />
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      <SessionList title="Today" items={todays} onToggle={toggle} onRemove={remove} empty="Nothing scheduled today." />
-      <SessionList title="Recent & upcoming" items={past} onToggle={toggle} onRemove={remove} empty="No other sessions yet." />
-    </div>
-  );
-}
+      {tab === "plan" && (
+        <TrainingPlanCard
+          plan={plan ? { ...plan, week: planDays } : null}
+          profile={profile}
+          onUseDay={(d) => {
+            setDraft(makeDraftFromPlanDay(d));
+            setSelected(today);
+            setTab("log");
+          }}
+        />
+      )}
 
-function SessionList({
-  title, items, onToggle, onRemove, empty,
-}: {
-  title: string;
-  items: { id: string; name: string; workout_type: string; intensity: string; duration_min: number; completed: boolean; scheduled_for: string; calories_burned: number | null }[];
-  onToggle: (id: string, completed: boolean) => void;
-  onRemove: (id: string) => void;
-  empty: string;
-}) {
-  return (
-    <section>
-      <h2 className="mb-3 text-sm font-semibold">{title}</h2>
-      {items.length === 0 ? (
-        <div className="glass rounded-3xl p-6 text-center text-sm text-muted-foreground">{empty}</div>
-      ) : (
-        <ul className="space-y-3">
-          {items.map((w) => (
-            <li key={w.id} className="glass grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl p-4">
-              <button
-                onClick={() => onToggle(w.id, w.completed)}
-                aria-label={w.completed ? `Mark ${w.name} incomplete` : `Mark ${w.name} complete`}
-                className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border ${
-                  w.completed ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground"
-                }`}
-              >
-                <Check className="h-4 w-4" />
+      {tab === "log" && (
+        <div className="space-y-4">
+          <section className="glass rounded-3xl p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <button onClick={() => setSelected(addDays(selected, -7))} className="rounded-full border border-border px-3 py-1.5 text-xs">
+                ← Previous week
               </button>
-              <div className="min-w-0">
-                <div className="truncate font-semibold">{w.name}</div>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span className="capitalize">{w.workout_type}</span>
-                  <span className="capitalize">· {w.intensity}</span>
-                  <span className="flex items-center gap-1"><Timer className="h-3 w-3" />{w.duration_min}m</span>
-                  <span>· {w.scheduled_for}</span>
-                  {w.calories_burned != null && (
-                    <span className="flex items-center gap-1"><Flame className="h-3 w-3" />{w.calories_burned} kcal</span>
-                  )}
+              <span className="text-xs text-muted-foreground">{prettyDay(weekStart)} – {prettyDay(addDays(weekStart, 6))}</span>
+              <button onClick={() => setSelected(addDays(selected, 7))} className="rounded-full border border-border px-3 py-1.5 text-xs">
+                Next week →
+              </button>
+            </div>
+            <div className="grid grid-cols-7 gap-1.5">
+              {week.map((key) => {
+                const logs = byDay.get(key) ?? [];
+                const rest = logs.some((l) => l.rest_day);
+                const done = logs.some((l) => !l.rest_day);
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setSelected(key)}
+                    aria-current={key === selected}
+                    aria-label={`${prettyDay(key)}${done ? ", session logged" : rest ? ", rest day" : ", nothing logged"}`}
+                    className={`flex flex-col items-center gap-1 rounded-2xl border p-2 text-[11px] ${
+                      key === selected ? "border-primary bg-primary/10" : "border-border/60"
+                    } ${key === today ? "ring-1 ring-accent/60" : ""}`}
+                  >
+                    <span className="text-muted-foreground">{prettyDay(key).split(" ")[0]}</span>
+                    <span className="font-semibold">{key.slice(8)}</span>
+                    {done ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> : rest ? <Moon className="h-3.5 w-3.5 text-accent" /> : <span className="h-3.5" />}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {(byDay.get(selected) ?? []).map((w) => (
+            <div key={w.id} className="glass rounded-3xl p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-sm font-semibold">{w.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {w.rest_day ? "Rest day" : `${w.workout_type} · ${w.duration_min} min${w.perceived_effort ? ` · RPE ${w.perceived_effort}` : ""}`}
+                  </div>
                 </div>
               </div>
-              <button onClick={() => onRemove(w.id)} aria-label={`Delete ${w.name}`} className="shrink-0 rounded-full p-2 text-muted-foreground hover:text-destructive">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </li>
+              {((Array.isArray(w.exercises) ? w.exercises : []) as { name: string; sets: { reps: number; weight_kg: number | null }[] }[]).map((ex, i) => (
+                <div key={i} className="mt-2 text-xs text-muted-foreground">
+                  <span className="text-foreground">{ex.name}</span> —{" "}
+                  {(ex.sets ?? []).map((s) => (s.weight_kg ? `${s.reps}×${s.weight_kg}kg` : `${s.reps} reps`)).join(", ")}
+                </div>
+              ))}
+              {w.notes && <p className="mt-2 text-xs italic text-muted-foreground">{w.notes}</p>}
+            </div>
           ))}
-        </ul>
+
+          <WorkoutLogger
+            dateKey={selected}
+            draft={draft}
+            setDraft={setDraft}
+            history={(workouts ?? []).map((w) => ({
+              exercises: w.exercises,
+              scheduled_for: String(w.scheduled_for),
+              perceived_effort: w.perceived_effort,
+            }))}
+            age={profile?.age}
+            onSaved={() => undefined}
+          />
+        </div>
       )}
-    </section>
+
+      {tab === "progress" && (
+        <ProgressTrend
+          weighIns={(metrics ?? []).map((m) => ({ date: m.log_date, weight: Number(m.weight_kg) }))}
+          sessionsThisWeek={sessionsThisWeek}
+          streakDays={streakDays}
+          goal={profile?.goal}
+          age={profile?.age}
+        />
+      )}
+    </div>
   );
 }

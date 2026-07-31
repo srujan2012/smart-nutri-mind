@@ -59,6 +59,99 @@ export type Database = {
         }
         Relationships: []
       }
+      exercises: {
+        Row: {
+          alternatives: string[]
+          category: string
+          confidence: string
+          contraindications: string[]
+          created_at: string
+          created_by: string | null
+          data_source: string
+          default_reps: string | null
+          default_sets: number | null
+          difficulty: string
+          duration_sec: number | null
+          equipment: string[]
+          id: string
+          instructions: string[]
+          min_age: number | null
+          muscle_groups: string[]
+          name: string
+          progressions: string[]
+          regressions: string[]
+          rest_sec: number | null
+          safety_cues: string[]
+          setting: string
+          slug: string | null
+          source_url: string | null
+          sports: string[]
+          updated_at: string
+          verified: boolean
+          video_url: string | null
+        }
+        Insert: {
+          alternatives?: string[]
+          category?: string
+          confidence?: string
+          contraindications?: string[]
+          created_at?: string
+          created_by?: string | null
+          data_source?: string
+          default_reps?: string | null
+          default_sets?: number | null
+          difficulty?: string
+          duration_sec?: number | null
+          equipment?: string[]
+          id?: string
+          instructions?: string[]
+          min_age?: number | null
+          muscle_groups?: string[]
+          name: string
+          progressions?: string[]
+          regressions?: string[]
+          rest_sec?: number | null
+          safety_cues?: string[]
+          setting?: string
+          slug?: string | null
+          source_url?: string | null
+          sports?: string[]
+          updated_at?: string
+          verified?: boolean
+          video_url?: string | null
+        }
+        Update: {
+          alternatives?: string[]
+          category?: string
+          confidence?: string
+          contraindications?: string[]
+          created_at?: string
+          created_by?: string | null
+          data_source?: string
+          default_reps?: string | null
+          default_sets?: number | null
+          difficulty?: string
+          duration_sec?: number | null
+          equipment?: string[]
+          id?: string
+          instructions?: string[]
+          min_age?: number | null
+          muscle_groups?: string[]
+          name?: string
+          progressions?: string[]
+          regressions?: string[]
+          rest_sec?: number | null
+          safety_cues?: string[]
+          setting?: string
+          slug?: string | null
+          source_url?: string | null
+          sports?: string[]
+          updated_at?: string
+          verified?: boolean
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       foods: {
         Row: {
           allergens: string[]
@@ -470,6 +563,72 @@ export type Database = {
         }
         Relationships: []
       }
+      training_plans: {
+        Row: {
+          active: boolean
+          adjustments: Json
+          age_range: string | null
+          created_at: string
+          days_per_week: number
+          equipment: string[]
+          fitness_level: string | null
+          focus: string[]
+          goal: string | null
+          id: string
+          inputs_signature: string | null
+          name: string
+          rationale: string | null
+          safety_notes: string[]
+          session_minutes: number
+          sport: string | null
+          updated_at: string
+          user_id: string
+          week: Json
+        }
+        Insert: {
+          active?: boolean
+          adjustments?: Json
+          age_range?: string | null
+          created_at?: string
+          days_per_week?: number
+          equipment?: string[]
+          fitness_level?: string | null
+          focus?: string[]
+          goal?: string | null
+          id?: string
+          inputs_signature?: string | null
+          name?: string
+          rationale?: string | null
+          safety_notes?: string[]
+          session_minutes?: number
+          sport?: string | null
+          updated_at?: string
+          user_id: string
+          week?: Json
+        }
+        Update: {
+          active?: boolean
+          adjustments?: Json
+          age_range?: string | null
+          created_at?: string
+          days_per_week?: number
+          equipment?: string[]
+          fitness_level?: string | null
+          focus?: string[]
+          goal?: string | null
+          id?: string
+          inputs_signature?: string | null
+          name?: string
+          rationale?: string | null
+          safety_notes?: string[]
+          session_minutes?: number
+          sport?: string | null
+          updated_at?: string
+          user_id?: string
+          week?: Json
+        }
+        Relationships: []
+      }
       workouts: {
         Row: {
           blocks: Json
@@ -477,10 +636,14 @@ export type Database = {
           completed: boolean
           created_at: string
           duration_min: number
+          exercises: Json
           id: string
           intensity: string
           name: string
           notes: string | null
+          perceived_effort: number | null
+          plan_id: string | null
+          rest_day: boolean
           scheduled_for: string
           updated_at: string
           user_id: string
@@ -492,10 +655,14 @@ export type Database = {
           completed?: boolean
           created_at?: string
           duration_min?: number
+          exercises?: Json
           id?: string
           intensity?: string
           name: string
           notes?: string | null
+          perceived_effort?: number | null
+          plan_id?: string | null
+          rest_day?: boolean
           scheduled_for?: string
           updated_at?: string
           user_id: string
@@ -507,10 +674,14 @@ export type Database = {
           completed?: boolean
           created_at?: string
           duration_min?: number
+          exercises?: Json
           id?: string
           intensity?: string
           name?: string
           notes?: string | null
+          perceived_effort?: number | null
+          plan_id?: string | null
+          rest_day?: boolean
           scheduled_for?: string
           updated_at?: string
           user_id?: string

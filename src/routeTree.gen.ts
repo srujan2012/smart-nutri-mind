@@ -22,6 +22,7 @@ import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedGroceryRouteImport } from './routes/_authenticated/grocery'
 import { Route as AuthenticatedFridgeRouteImport } from './routes/_authenticated/fridge'
 import { Route as AuthenticatedFoodsRouteImport } from './routes/_authenticated/foods'
+import { Route as AuthenticatedExercisesRouteImport } from './routes/_authenticated/exercises'
 import { Route as AuthenticatedDetoxRouteImport } from './routes/_authenticated/detox'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
@@ -90,6 +91,11 @@ const AuthenticatedFoodsRoute = AuthenticatedFoodsRouteImport.update({
   path: '/foods',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedExercisesRoute = AuthenticatedExercisesRouteImport.update({
+  id: '/exercises',
+  path: '/exercises',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDetoxRoute = AuthenticatedDetoxRouteImport.update({
   id: '/detox',
   path: '/detox',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/detox': typeof AuthenticatedDetoxRoute
+  '/exercises': typeof AuthenticatedExercisesRoute
   '/foods': typeof AuthenticatedFoodsRoute
   '/fridge': typeof AuthenticatedFridgeRoute
   '/grocery': typeof AuthenticatedGroceryRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/detox': typeof AuthenticatedDetoxRoute
+  '/exercises': typeof AuthenticatedExercisesRoute
   '/foods': typeof AuthenticatedFoodsRoute
   '/fridge': typeof AuthenticatedFridgeRoute
   '/grocery': typeof AuthenticatedGroceryRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/detox': typeof AuthenticatedDetoxRoute
+  '/_authenticated/exercises': typeof AuthenticatedExercisesRoute
   '/_authenticated/foods': typeof AuthenticatedFoodsRoute
   '/_authenticated/fridge': typeof AuthenticatedFridgeRoute
   '/_authenticated/grocery': typeof AuthenticatedGroceryRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/dashboard'
     | '/detox'
+    | '/exercises'
     | '/foods'
     | '/fridge'
     | '/grocery'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/dashboard'
     | '/detox'
+    | '/exercises'
     | '/foods'
     | '/fridge'
     | '/grocery'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat'
     | '/_authenticated/dashboard'
     | '/_authenticated/detox'
+    | '/_authenticated/exercises'
     | '/_authenticated/foods'
     | '/_authenticated/fridge'
     | '/_authenticated/grocery'
@@ -313,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFoodsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/exercises': {
+      id: '/_authenticated/exercises'
+      path: '/exercises'
+      fullPath: '/exercises'
+      preLoaderRoute: typeof AuthenticatedExercisesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/detox': {
       id: '/_authenticated/detox'
       path: '/detox'
@@ -341,6 +360,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDetoxRoute: typeof AuthenticatedDetoxRoute
+  AuthenticatedExercisesRoute: typeof AuthenticatedExercisesRoute
   AuthenticatedFoodsRoute: typeof AuthenticatedFoodsRoute
   AuthenticatedFridgeRoute: typeof AuthenticatedFridgeRoute
   AuthenticatedGroceryRoute: typeof AuthenticatedGroceryRoute
@@ -357,6 +377,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDetoxRoute: AuthenticatedDetoxRoute,
+  AuthenticatedExercisesRoute: AuthenticatedExercisesRoute,
   AuthenticatedFoodsRoute: AuthenticatedFoodsRoute,
   AuthenticatedFridgeRoute: AuthenticatedFridgeRoute,
   AuthenticatedGroceryRoute: AuthenticatedGroceryRoute,
