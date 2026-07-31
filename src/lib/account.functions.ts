@@ -8,12 +8,13 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const uid = context.userId;
 
-    const tables = ["meals", "grocery_items", "pantry_scans", "daily_metrics", "workouts", "profiles"] as const;
+    const tables = ["meals", "grocery_items", "pantry_scans", "daily_metrics", "workouts"] as const;
     for (const t of tables) {
-      const col = t === "profiles" ? "id" : "user_id";
-      const { error } = await supabaseAdmin.from(t).delete().eq(col, uid);
+      const { error } = await supabaseAdmin.from(t).delete().eq("user_id", uid);
       if (error) throw new Error(`Failed clearing ${t}: ${error.message}`);
     }
+    const { error: pErr } = await supabaseAdmin.from("profiles").delete().eq("id", uid);
+    if (pErr) throw new Error(`Failed clearing profile: ${pErr.message}`);
 
     const { error } = await supabaseAdmin.auth.admin.deleteUser(uid);
     if (error) throw new Error(error.message);
