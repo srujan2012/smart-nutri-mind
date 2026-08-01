@@ -132,7 +132,7 @@ function AthleteMode() {
     });
   }, [sports, q, category]);
 
-  type ProfileUpdate = Parameters<ReturnType<typeof supabase.from<"profiles">>["update"]>[0];
+  type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
   const saveProfile = useMutation({
     mutationFn: async (patch: ProfileUpdate) => {
