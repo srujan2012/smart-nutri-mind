@@ -119,9 +119,34 @@ export const generateTrainingPlan = createServerFn({ method: "POST" })
       ? ` YOUTH ATHLETE (age ${age}): prioritise technique, bodyweight and light-load work, full range of motion, and fun. Keep loads submaximal (never 1-3 rep maxes), cap plyometric volume, include at least 2 full rest days, and never frame training around body appearance or weight loss. Growth and development come from sleep, food and consistent age-appropriate activity — never claim training changes height.`
       : "";
 
-    const sportClause = profile.sport
-      ? ` SPORT: ${profile.sport}${profile.sport_position ? ` (${profile.sport_position})` : ""}${profile.competition_level ? `, ${profile.competition_level} level` : ""}. Include sport-specific conditioning: the energy systems, movement patterns and common injury-prevention work for this sport. Place hard/speed work on fresher days and keep it away from heavy lower-body lifting.`
-      : "";
+    let sportClause = "";
+    if (profile.sport) {
+      const { data: sportRow } = await supabase
+        .from("sports")
+        .select("name, category, energy_aerobic, energy_glycolytic, energy_alactic, primary_qualities, contact_level, weight_sensitive")
+        .eq("name", profile.sport)
+        .maybeSingle();
+      const energy = sportRow
+        ? ` Energy systems: ${sportRow.energy_aerobic}% aerobic, ${sportRow.energy_glycolytic}% glycolytic, ${sportRow.energy_alactic}% alactic/power — mirror that ratio in the conditioning you prescribe. Key qualities: ${((sportRow.primary_qualities ?? []) as string[]).join(", ") || "general athleticism"}.`
+        : "";
+      const contact = sportRow?.contact_level === "collision"
+        ? " Collision sport: include neck strength, landing and deceleration mechanics."
+        : "";
+      const weightNote = sportRow?.weight_sensitive
+        ? " Weight-sensitive sport: never prescribe aggressive cuts or rapid weight-making strategies."
+        : "";
+      const season = profile.season_phase
+        ? ` Season phase: ${profile.season_phase} — ${
+            profile.season_phase === "In-season" ? "keep gym volume low and preserve freshness for competition"
+            : profile.season_phase === "Pre-season" ? "build sport-specific conditioning and speed"
+            : profile.season_phase === "Peaking" ? "taper volume, retain short high-quality intensity"
+            : profile.season_phase === "Transition" ? "active rest, mobility and enjoyable low-intensity work only"
+            : "highest volume of the year; build strength and correct asymmetries"
+          }.`
+        : "";
+      sportClause = ` SPORT: ${profile.sport}${profile.sport_discipline ? ` — ${profile.sport_discipline}` : ""}${profile.sport_event ? ` (${profile.sport_event})` : ""}${profile.sport_position ? `, position ${profile.sport_position}` : ""}${profile.competition_level ? `, ${profile.competition_level} level` : ""}.${energy}${season}${contact}${weightNote} Include sport-specific conditioning and common injury-prevention work. Place hard/speed work on fresher days and keep it away from heavy lower-body lifting.`;
+    }
+
 
     const focus = ((profile.goals ?? []) as string[]).join(", ");
     const prompt = `Build a 7-day training plan.
