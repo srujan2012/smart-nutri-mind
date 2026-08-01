@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { LogOut, LayoutDashboard, Camera, Refrigerator, ChefHat, MessageSquare, User, ShoppingCart, Dumbbell, Settings, Database, Sparkles, ListChecks } from "lucide-react";
+import { LogOut, LayoutDashboard, Camera, Refrigerator, ChefHat, MessageSquare, User, ShoppingCart, Dumbbell, Settings, Database, Sparkles, ListChecks, Trophy } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
