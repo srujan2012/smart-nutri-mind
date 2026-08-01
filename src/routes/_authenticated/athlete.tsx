@@ -132,8 +132,10 @@ function AthleteMode() {
     });
   }, [sports, q, category]);
 
+  type ProfileUpdate = Parameters<ReturnType<typeof supabase.from<"profiles">>["update"]>[0];
+
   const saveProfile = useMutation({
-    mutationFn: async (patch: Record<string, unknown>) => {
+    mutationFn: async (patch: ProfileUpdate) => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Not signed in");
       const { error } = await supabase.from("profiles").update(patch).eq("id", u.user.id);
