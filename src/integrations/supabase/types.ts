@@ -466,13 +466,17 @@ export type Database = {
           protein_target: number | null
           reminder_times: Json
           reminders_enabled: boolean
+          season_phase: string | null
           sleep_time: string | null
           sport: string | null
+          sport_discipline: string | null
+          sport_event: string | null
           sport_position: string | null
           theme: string
           timezone: string | null
           training_days_per_week: number | null
           training_hours_per_day: number | null
+          training_schedule: Json
           updated_at: string
           wake_time: string | null
           weight_kg: number | null
@@ -508,13 +512,17 @@ export type Database = {
           protein_target?: number | null
           reminder_times?: Json
           reminders_enabled?: boolean
+          season_phase?: string | null
           sleep_time?: string | null
           sport?: string | null
+          sport_discipline?: string | null
+          sport_event?: string | null
           sport_position?: string | null
           theme?: string
           timezone?: string | null
           training_days_per_week?: number | null
           training_hours_per_day?: number | null
+          training_schedule?: Json
           updated_at?: string
           wake_time?: string | null
           weight_kg?: number | null
@@ -550,16 +558,92 @@ export type Database = {
           protein_target?: number | null
           reminder_times?: Json
           reminders_enabled?: boolean
+          season_phase?: string | null
           sleep_time?: string | null
           sport?: string | null
+          sport_discipline?: string | null
+          sport_event?: string | null
           sport_position?: string | null
           theme?: string
           timezone?: string | null
           training_days_per_week?: number | null
           training_hours_per_day?: number | null
+          training_schedule?: Json
           updated_at?: string
           wake_time?: string | null
           weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      sports: {
+        Row: {
+          aliases: string[]
+          category: string
+          confidence: string
+          contact_level: string
+          created_at: string
+          created_by: string | null
+          data_source: string
+          disciplines: string[]
+          energy_aerobic: number
+          energy_alactic: number
+          energy_glycolytic: number
+          events: string[]
+          id: string
+          name: string
+          popularity: number
+          positions: string[]
+          primary_qualities: string[]
+          slug: string | null
+          typical_season: string | null
+          updated_at: string
+          weight_sensitive: boolean
+        }
+        Insert: {
+          aliases?: string[]
+          category?: string
+          confidence?: string
+          contact_level?: string
+          created_at?: string
+          created_by?: string | null
+          data_source?: string
+          disciplines?: string[]
+          energy_aerobic?: number
+          energy_alactic?: number
+          energy_glycolytic?: number
+          events?: string[]
+          id?: string
+          name: string
+          popularity?: number
+          positions?: string[]
+          primary_qualities?: string[]
+          slug?: string | null
+          typical_season?: string | null
+          updated_at?: string
+          weight_sensitive?: boolean
+        }
+        Update: {
+          aliases?: string[]
+          category?: string
+          confidence?: string
+          contact_level?: string
+          created_at?: string
+          created_by?: string | null
+          data_source?: string
+          disciplines?: string[]
+          energy_aerobic?: number
+          energy_alactic?: number
+          energy_glycolytic?: number
+          events?: string[]
+          id?: string
+          name?: string
+          popularity?: number
+          positions?: string[]
+          primary_qualities?: string[]
+          slug?: string | null
+          typical_season?: string | null
+          updated_at?: string
+          weight_sensitive?: boolean
         }
         Relationships: []
       }
