@@ -11,6 +11,7 @@ const nav = [
   { to: "/foods", icon: Database, label: "Foods" },
   { to: "/grocery", icon: ShoppingCart, label: "List" },
   { to: "/train", icon: Dumbbell, label: "Train" },
+  { to: "/athlete", icon: Trophy, label: "Athlete" },
   { to: "/exercises", icon: ListChecks, label: "Moves" },
   { to: "/chat", icon: MessageSquare, label: "Coach" },
 
