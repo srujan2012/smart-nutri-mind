@@ -19,6 +19,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPlannerRouteImport } from './routes/_authenticated/planner'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
+import { Route as AuthenticatedHealthRouteImport } from './routes/_authenticated/health'
 import { Route as AuthenticatedGroceryRouteImport } from './routes/_authenticated/grocery'
 import { Route as AuthenticatedFridgeRouteImport } from './routes/_authenticated/fridge'
 import { Route as AuthenticatedFoodsRouteImport } from './routes/_authenticated/foods'
@@ -77,6 +78,11 @@ const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedHealthRoute = AuthenticatedHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedGroceryRoute = AuthenticatedGroceryRouteImport.update({
   id: '/grocery',
   path: '/grocery',
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/foods': typeof AuthenticatedFoodsRoute
   '/fridge': typeof AuthenticatedFridgeRoute
   '/grocery': typeof AuthenticatedGroceryRoute
+  '/health': typeof AuthenticatedHealthRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/planner': typeof AuthenticatedPlannerRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/foods': typeof AuthenticatedFoodsRoute
   '/fridge': typeof AuthenticatedFridgeRoute
   '/grocery': typeof AuthenticatedGroceryRoute
+  '/health': typeof AuthenticatedHealthRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/planner': typeof AuthenticatedPlannerRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/_authenticated/foods': typeof AuthenticatedFoodsRoute
   '/_authenticated/fridge': typeof AuthenticatedFridgeRoute
   '/_authenticated/grocery': typeof AuthenticatedGroceryRoute
+  '/_authenticated/health': typeof AuthenticatedHealthRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/planner': typeof AuthenticatedPlannerRoute
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/foods'
     | '/fridge'
     | '/grocery'
+    | '/health'
     | '/history'
     | '/onboarding'
     | '/planner'
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/foods'
     | '/fridge'
     | '/grocery'
+    | '/health'
     | '/history'
     | '/onboarding'
     | '/planner'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/_authenticated/foods'
     | '/_authenticated/fridge'
     | '/_authenticated/grocery'
+    | '/_authenticated/health'
     | '/_authenticated/history'
     | '/_authenticated/onboarding'
     | '/_authenticated/planner'
@@ -316,6 +328,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHistoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/health': {
+      id: '/_authenticated/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof AuthenticatedHealthRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/grocery': {
       id: '/_authenticated/grocery'
       path: '/grocery'
@@ -384,6 +403,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFoodsRoute: typeof AuthenticatedFoodsRoute
   AuthenticatedFridgeRoute: typeof AuthenticatedFridgeRoute
   AuthenticatedGroceryRoute: typeof AuthenticatedGroceryRoute
+  AuthenticatedHealthRoute: typeof AuthenticatedHealthRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPlannerRoute: typeof AuthenticatedPlannerRoute
@@ -402,6 +422,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFoodsRoute: AuthenticatedFoodsRoute,
   AuthenticatedFridgeRoute: AuthenticatedFridgeRoute,
   AuthenticatedGroceryRoute: AuthenticatedGroceryRoute,
+  AuthenticatedHealthRoute: AuthenticatedHealthRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPlannerRoute: AuthenticatedPlannerRoute,

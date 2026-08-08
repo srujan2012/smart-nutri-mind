@@ -7,6 +7,7 @@ import { addDays, prettyDay, startOfWeek } from "@/lib/dates";
 import { TrainingPlanCard } from "@/components/TrainingPlanCard";
 import { WorkoutLogger, emptyDraft, makeDraftFromPlanDay, type Draft } from "@/components/WorkoutLogger";
 import { ProgressTrend } from "@/components/ProgressTrend";
+import { HealthSafetyBanner } from "@/components/HealthSafetyBanner";
 import { CalendarDays, Dumbbell, LineChart, Moon, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/train")({
@@ -123,6 +124,7 @@ function TrainPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
+      <HealthSafetyBanner context="training" />
       <header>
         <div className="flex items-center gap-2 text-xs text-primary">
           <Dumbbell className="h-3 w-3" /> Training

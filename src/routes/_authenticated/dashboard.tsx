@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { NutrientRing } from "@/components/NutrientRing";
 import { DailyVitals } from "@/components/DailyVitals";
 import { AdaptiveTargets } from "@/components/AdaptiveTargets";
+import { HealthSafetyBanner } from "@/components/HealthSafetyBanner";
 
 import { Camera, MessageSquare, ChefHat, TrendingUp, Sparkles, Award, Droplets, Clock, HeartPulse, Target, Flame, Beef, Wheat, Salad, Nut } from "lucide-react";
 
@@ -106,6 +107,8 @@ function Dashboard() {
           <Camera className="h-4 w-4" /> Scan meal
         </Link>
       </div>
+
+      <HealthSafetyBanner context="all" />
 
       {/* Vitals: hydration, sleep, readiness, streak, next best action */}
       <DailyVitals

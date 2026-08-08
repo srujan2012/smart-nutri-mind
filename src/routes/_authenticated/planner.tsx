@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { generateMealPlan } from "@/lib/nutrition.functions";
 import { ChefHat, Clock, IndianRupee, ShoppingCart, Sparkles, Target, TimerReset, Utensils } from "lucide-react";
 import { toast } from "sonner";
+import { HealthSafetyBanner } from "@/components/HealthSafetyBanner";
 
 export const Route = createFileRoute("/_authenticated/planner")({
   component: Planner,
@@ -39,6 +40,7 @@ function Planner() {
 
   return (
     <div className="space-y-6">
+      <HealthSafetyBanner context="diet" />
       <div className="flex items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs text-primary">
