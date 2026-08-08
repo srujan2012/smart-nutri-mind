@@ -296,6 +296,170 @@ export type Database = {
         }
         Relationships: []
       }
+      health_consents: {
+        Row: {
+          consent_version: string
+          created_at: string
+          granted: boolean
+          granted_at: string | null
+          id: string
+          revoked_at: string | null
+          scope: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consent_version?: string
+          created_at?: string
+          granted?: boolean
+          granted_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          scope?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consent_version?: string
+          created_at?: string
+          granted?: boolean
+          granted_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          scope?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      health_flags: {
+        Row: {
+          acknowledged: boolean
+          blocks_diet: boolean
+          blocks_training: boolean
+          category: string
+          created_at: string
+          evidence: Json
+          id: string
+          level: string
+          message: string
+          report_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          blocks_diet?: boolean
+          blocks_training?: boolean
+          category?: string
+          created_at?: string
+          evidence?: Json
+          id?: string
+          level?: string
+          message: string
+          report_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acknowledged?: boolean
+          blocks_diet?: boolean
+          blocks_training?: boolean
+          category?: string
+          created_at?: string
+          evidence?: Json
+          id?: string
+          level?: string
+          message?: string
+          report_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_flags_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "health_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      health_reports: {
+        Row: {
+          alert_level: string
+          blocks_plan: boolean
+          created_at: string
+          extracted: Json
+          file_mime: string | null
+          file_path: string | null
+          id: string
+          missing_fields: Json
+          notes: string | null
+          profile_mismatches: Json
+          reminder_enabled: boolean
+          reminder_time: string
+          report_date: string | null
+          report_type: string
+          review_date: string | null
+          reviewed_by_professional: boolean
+          summary: string | null
+          title: string
+          updated_at: string
+          upload_status: string
+          user_id: string
+        }
+        Insert: {
+          alert_level?: string
+          blocks_plan?: boolean
+          created_at?: string
+          extracted?: Json
+          file_mime?: string | null
+          file_path?: string | null
+          id?: string
+          missing_fields?: Json
+          notes?: string | null
+          profile_mismatches?: Json
+          reminder_enabled?: boolean
+          reminder_time?: string
+          report_date?: string | null
+          report_type?: string
+          review_date?: string | null
+          reviewed_by_professional?: boolean
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          upload_status?: string
+          user_id: string
+        }
+        Update: {
+          alert_level?: string
+          blocks_plan?: boolean
+          created_at?: string
+          extracted?: Json
+          file_mime?: string | null
+          file_path?: string | null
+          id?: string
+          missing_fields?: Json
+          notes?: string | null
+          profile_mismatches?: Json
+          reminder_enabled?: boolean
+          reminder_time?: string
+          report_date?: string | null
+          report_type?: string
+          review_date?: string | null
+          reviewed_by_professional?: boolean
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          upload_status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meals: {
         Row: {
           analysis: Json
@@ -574,6 +738,59 @@ export type Database = {
           weight_kg?: number | null
         }
         Relationships: []
+      }
+      program_report_requirements: {
+        Row: {
+          countdown_days: number
+          created_at: string
+          daily_reminder: boolean
+          due_date: string | null
+          id: string
+          program: string
+          region: string
+          required: boolean
+          required_report_types: Json
+          satisfied_by: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          countdown_days?: number
+          created_at?: string
+          daily_reminder?: boolean
+          due_date?: string | null
+          id?: string
+          program: string
+          region?: string
+          required?: boolean
+          required_report_types?: Json
+          satisfied_by?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          countdown_days?: number
+          created_at?: string
+          daily_reminder?: boolean
+          due_date?: string | null
+          id?: string
+          program?: string
+          region?: string
+          required?: boolean
+          required_report_types?: Json
+          satisfied_by?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_report_requirements_satisfied_by_fkey"
+            columns: ["satisfied_by"]
+            isOneToOne: false
+            referencedRelation: "health_reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sports: {
         Row: {
