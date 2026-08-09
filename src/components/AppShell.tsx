@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { LogOut, LayoutDashboard, Camera, Refrigerator, ChefHat, MessageSquare, User, ShoppingCart, Dumbbell, Settings, Database, Sparkles, ListChecks, Trophy, HeartPulse } from "lucide-react";
+import { LogOut, LayoutDashboard, Camera, Refrigerator, ChefHat, MessageSquare, User, ShoppingCart, Dumbbell, Settings, Database, Sparkles, ListChecks, Trophy, HeartPulse, Brain } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,7 +13,9 @@ const nav = [
   { to: "/train", icon: Dumbbell, label: "Train" },
   { to: "/athlete", icon: Trophy, label: "Athlete" },
   { to: "/exercises", icon: ListChecks, label: "Moves" },
-  { to: "/chat", icon: MessageSquare, label: "Coach" },
+  { to: "/coach", icon: Brain, label: "Coach" },
+  { to: "/chat", icon: MessageSquare, label: "Ask AI" },
+
 
   { to: "/health", icon: HeartPulse, label: "Health" },
   { to: "/detox", icon: Sparkles, label: "Habits" },

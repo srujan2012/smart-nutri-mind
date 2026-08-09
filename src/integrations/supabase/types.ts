@@ -14,6 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      coach_days: {
+        Row: {
+          corrections: Json
+          created_at: string
+          factors: Json
+          id: string
+          log_date: string
+          narrative: string | null
+          nba_done: boolean
+          next_best_action: Json
+          recommendations: Json
+          twin: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          corrections?: Json
+          created_at?: string
+          factors?: Json
+          id?: string
+          log_date: string
+          narrative?: string | null
+          nba_done?: boolean
+          next_best_action?: Json
+          recommendations?: Json
+          twin?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          corrections?: Json
+          created_at?: string
+          factors?: Json
+          id?: string
+          log_date?: string
+          narrative?: string | null
+          nba_done?: boolean
+          next_best_action?: Json
+          recommendations?: Json
+          twin?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      coach_state: {
+        Row: {
+          best_streak: number
+          consistency_score: number
+          created_at: string
+          future_self: string | null
+          identity_statement: string | null
+          last_active_date: string | null
+          shields_available: number
+          shields_used: number
+          streak_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          best_streak?: number
+          consistency_score?: number
+          created_at?: string
+          future_self?: string | null
+          identity_statement?: string | null
+          last_active_date?: string | null
+          shields_available?: number
+          shields_used?: number
+          streak_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          best_streak?: number
+          consistency_score?: number
+          created_at?: string
+          future_self?: string | null
+          identity_statement?: string | null
+          last_active_date?: string | null
+          shields_available?: number
+          shields_used?: number
+          streak_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_metrics: {
         Row: {
           created_at: string
@@ -296,6 +383,83 @@ export type Database = {
         }
         Relationships: []
       }
+      habit_logs: {
+        Row: {
+          created_at: string
+          done: boolean
+          habit_id: string
+          id: string
+          log_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          habit_id: string
+          id?: string
+          log_date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          habit_id?: string
+          id?: string
+          log_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_logs_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          active: boolean
+          created_at: string
+          cue: string | null
+          id: string
+          identity_statement: string | null
+          name: string
+          reward: string | null
+          routine: string | null
+          target_days_per_week: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          cue?: string | null
+          id?: string
+          identity_statement?: string | null
+          name: string
+          reward?: string | null
+          routine?: string | null
+          target_days_per_week?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          cue?: string | null
+          id?: string
+          identity_statement?: string | null
+          name?: string
+          reward?: string | null
+          routine?: string | null
+          target_days_per_week?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       health_consents: {
         Row: {
           consent_version: string
@@ -517,6 +681,36 @@ export type Database = {
         }
         Relationships: []
       }
+      micro_wins: {
+        Row: {
+          created_at: string
+          detail: string | null
+          id: string
+          kind: string
+          log_date: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind?: string
+          log_date: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind?: string
+          log_date?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pantry_scans: {
         Row: {
           best_pick: string | null
@@ -614,6 +808,8 @@ export type Database = {
           daily_budget: number | null
           daily_schedule: string | null
           equipment: string[]
+          exam_mode: boolean
+          exam_until: string | null
           fat_target: number | null
           fiber_target: number | null
           fitness_level: string | null
@@ -622,8 +818,10 @@ export type Database = {
           gender: string | null
           goal: string | null
           goals: string[]
+          growth_mode: boolean
           height_cm: number | null
           id: string
+          injuries: Json
           lifestyle: string[] | null
           medications: string[] | null
           onboarded: boolean
@@ -660,6 +858,8 @@ export type Database = {
           daily_budget?: number | null
           daily_schedule?: string | null
           equipment?: string[]
+          exam_mode?: boolean
+          exam_until?: string | null
           fat_target?: number | null
           fiber_target?: number | null
           fitness_level?: string | null
@@ -668,8 +868,10 @@ export type Database = {
           gender?: string | null
           goal?: string | null
           goals?: string[]
+          growth_mode?: boolean
           height_cm?: number | null
           id: string
+          injuries?: Json
           lifestyle?: string[] | null
           medications?: string[] | null
           onboarded?: boolean
@@ -706,6 +908,8 @@ export type Database = {
           daily_budget?: number | null
           daily_schedule?: string | null
           equipment?: string[]
+          exam_mode?: boolean
+          exam_until?: string | null
           fat_target?: number | null
           fiber_target?: number | null
           fitness_level?: string | null
@@ -714,8 +918,10 @@ export type Database = {
           gender?: string | null
           goal?: string | null
           goals?: string[]
+          growth_mode?: boolean
           height_cm?: number | null
           id?: string
+          injuries?: Json
           lifestyle?: string[] | null
           medications?: string[] | null
           onboarded?: boolean
