@@ -13,7 +13,9 @@ const nav = [
   { to: "/train", icon: Dumbbell, label: "Train" },
   { to: "/athlete", icon: Trophy, label: "Athlete" },
   { to: "/exercises", icon: ListChecks, label: "Moves" },
-  { to: "/chat", icon: MessageSquare, label: "Coach" },
+  { to: "/coach", icon: Brain, label: "Coach" },
+  { to: "/chat", icon: MessageSquare, label: "Ask AI" },
+
 
   { to: "/health", icon: HeartPulse, label: "Health" },
   { to: "/detox", icon: Sparkles, label: "Habits" },
