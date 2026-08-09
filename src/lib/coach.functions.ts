@@ -207,10 +207,11 @@ export const getCoachToday = createServerFn({ method: "POST" })
       {
         user_id: userId,
         log_date: today,
-        twin: twin as unknown as Record<string, unknown>,
-        recommendations: plan as unknown as Record<string, unknown>,
-        next_best_action: plan.nextBestAction,
-        factors: twin.factors,
+        twin: JSON.parse(JSON.stringify(twin)),
+        recommendations: JSON.parse(JSON.stringify(plan)),
+        next_best_action: JSON.parse(JSON.stringify(plan.nextBestAction)),
+        factors: JSON.parse(JSON.stringify(twin.factors)),
+
       },
       { onConflict: "user_id,log_date" },
     );
