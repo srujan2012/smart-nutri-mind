@@ -116,7 +116,7 @@ function Coach() {
 
   const refresh = useCallback(async () => {
     try {
-      const r = await load({ data: {} });
+      const r = await load();
       setData(r);
       setIdentityText(r.identity_statement ?? "");
     } catch (e) {
@@ -283,7 +283,7 @@ function Coach() {
             onClick={async () => {
               setBriefing(true);
               try {
-                const r = await brief({ data: {} });
+                const r = await brief();
                 setData({ ...data, narrative: r.narrative });
               } catch (e) {
                 toast.error(e instanceof Error ? e.message : "Briefing failed");
@@ -353,7 +353,7 @@ function Coach() {
                 <button
                   onClick={async () => {
                     try {
-                      await shield({ data: {} });
+                      await shield();
                       toast.success("Shield used — your streak is safe today");
                       void refresh();
                     } catch (e) {

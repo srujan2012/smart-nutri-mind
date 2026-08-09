@@ -26,6 +26,7 @@ import { Route as AuthenticatedFoodsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedExercisesRouteImport } from './routes/_authenticated/exercises'
 import { Route as AuthenticatedDetoxRouteImport } from './routes/_authenticated/detox'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedAthleteRouteImport } from './routes/_authenticated/athlete'
 
@@ -113,6 +114,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
+  id: '/coach',
+  path: '/coach',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/athlete': typeof AuthenticatedAthleteRoute
   '/chat': typeof AuthenticatedChatRoute
+  '/coach': typeof AuthenticatedCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/detox': typeof AuthenticatedDetoxRoute
   '/exercises': typeof AuthenticatedExercisesRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/athlete': typeof AuthenticatedAthleteRoute
   '/chat': typeof AuthenticatedChatRoute
+  '/coach': typeof AuthenticatedCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/detox': typeof AuthenticatedDetoxRoute
   '/exercises': typeof AuthenticatedExercisesRoute
@@ -171,6 +179,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/athlete': typeof AuthenticatedAthleteRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
+  '/_authenticated/coach': typeof AuthenticatedCoachRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/detox': typeof AuthenticatedDetoxRoute
   '/_authenticated/exercises': typeof AuthenticatedExercisesRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/athlete'
     | '/chat'
+    | '/coach'
     | '/dashboard'
     | '/detox'
     | '/exercises'
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/athlete'
     | '/chat'
+    | '/coach'
     | '/dashboard'
     | '/detox'
     | '/exercises'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/athlete'
     | '/_authenticated/chat'
+    | '/_authenticated/coach'
     | '/_authenticated/dashboard'
     | '/_authenticated/detox'
     | '/_authenticated/exercises'
@@ -377,6 +389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/coach': {
+      id: '/_authenticated/coach'
+      path: '/coach'
+      fullPath: '/coach'
+      preLoaderRoute: typeof AuthenticatedCoachRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/chat': {
       id: '/_authenticated/chat'
       path: '/chat'
@@ -397,6 +416,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAthleteRoute: typeof AuthenticatedAthleteRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
+  AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDetoxRoute: typeof AuthenticatedDetoxRoute
   AuthenticatedExercisesRoute: typeof AuthenticatedExercisesRoute
@@ -416,6 +436,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAthleteRoute: AuthenticatedAthleteRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
+  AuthenticatedCoachRoute: AuthenticatedCoachRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDetoxRoute: AuthenticatedDetoxRoute,
   AuthenticatedExercisesRoute: AuthenticatedExercisesRoute,
@@ -443,13 +464,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
