@@ -23,7 +23,7 @@ interface Props {
 const short = (d: string) => d.slice(5).replace("-", "/");
 
 export function InsightChart({
-  title, unit, data, kind = "line", color = "hsl(var(--primary))",
+  title, unit, data, kind = "line", color = "var(--primary)",
   target, targetLabel, confidence, note, emptyHint,
 }: Props) {
   const id = useId();
@@ -53,11 +53,11 @@ export function InsightChart({
           <ResponsiveContainer width="100%" height="100%">
             {kind === "bar" ? (
               <BarChart data={data} margin={{ top: 4, right: 6, left: -18, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis dataKey="day" tickFormatter={short} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" minTickGap={18} />
-                <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="day" tickFormatter={short} tick={{ fontSize: 10 }} stroke="var(--muted-foreground)" minTickGap={18} />
+                <YAxis tick={{ fontSize: 10 }} stroke="var(--muted-foreground)" />
                 <Tooltip contentStyle={tooltipStyle} labelFormatter={(l) => String(l)} />
-                {target ? <ReferenceLine y={target} stroke="hsl(var(--accent))" strokeDasharray="4 4" /> : null}
+                {target ? <ReferenceLine y={target} stroke="var(--accent)" strokeDasharray="4 4" /> : null}
                 <Bar dataKey="value" fill={color} radius={[4, 4, 0, 0]} />
               </BarChart>
             ) : kind === "area" ? (
@@ -68,22 +68,22 @@ export function InsightChart({
                     <stop offset="100%" stopColor={color} stopOpacity={0.03} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis dataKey="day" tickFormatter={short} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" minTickGap={18} />
-                <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="day" tickFormatter={short} tick={{ fontSize: 10 }} stroke="var(--muted-foreground)" minTickGap={18} />
+                <YAxis tick={{ fontSize: 10 }} stroke="var(--muted-foreground)" />
                 <Tooltip contentStyle={tooltipStyle} />
-                {target ? <ReferenceLine y={target} stroke="hsl(var(--accent))" strokeDasharray="4 4" /> : null}
+                {target ? <ReferenceLine y={target} stroke="var(--accent)" strokeDasharray="4 4" /> : null}
                 <Area type="monotone" dataKey="value" stroke={color} fill={`url(#g${id})`} connectNulls />
               </AreaChart>
             ) : (
               <LineChart data={data} margin={{ top: 4, right: 6, left: -18, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis dataKey="day" tickFormatter={short} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" minTickGap={18} />
-                <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" domain={["auto", "auto"]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="day" tickFormatter={short} tick={{ fontSize: 10 }} stroke="var(--muted-foreground)" minTickGap={18} />
+                <YAxis tick={{ fontSize: 10 }} stroke="var(--muted-foreground)" domain={["auto", "auto"]} />
                 <Tooltip contentStyle={tooltipStyle} />
-                {target ? <ReferenceLine y={target} stroke="hsl(var(--accent))" strokeDasharray="4 4" /> : null}
+                {target ? <ReferenceLine y={target} stroke="var(--accent)" strokeDasharray="4 4" /> : null}
                 <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} connectNulls />
-                <Line type="monotone" dataKey="avg" stroke="hsl(var(--accent))" strokeWidth={1.5} strokeDasharray="5 4" dot={false} connectNulls />
+                <Line type="monotone" dataKey="avg" stroke="var(--accent)" strokeWidth={1.5} strokeDasharray="5 4" dot={false} connectNulls />
               </LineChart>
             )}
           </ResponsiveContainer>
@@ -110,9 +110,9 @@ export function InsightChart({
 }
 
 const tooltipStyle = {
-  background: "hsl(var(--popover))",
-  border: "1px solid hsl(var(--border))",
+  background: "var(--popover)",
+  border: "1px solid var(--border)",
   borderRadius: 12,
   fontSize: 12,
-  color: "hsl(var(--popover-foreground))",
+  color: "var(--popover-foreground)",
 } as const;
