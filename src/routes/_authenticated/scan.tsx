@@ -34,6 +34,44 @@ function Scan() {
   const [addingKey, setAddingKey] = useState<string | null>(null);
   const [previewKey, setPreviewKey] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState(false);
+  const [listening, setListening] = useState(false);
+  const recRef = useRef<{ stop: () => void } | null>(null);
+
+  // Multimodal input: voice note alongside the photo and typed note.
+  const toggleMic = () => {
+    const SR = (window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition
+      ?? (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
+    if (!SR) {
+      toast.error("Voice input isn't supported in this browser — type your note instead");
+      return;
+    }
+    if (listening) {
+      recRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const Rec = SR as new () => {
+      lang: string; interimResults: boolean; continuous: boolean;
+      onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
+      onend: () => void; onerror: () => void; start: () => void; stop: () => void;
+    };
+    const rec = new Rec();
+    rec.lang = navigator.language || "en-IN";
+    rec.interimResults = false;
+    rec.continuous = false;
+    rec.onresult = (e) => {
+      const text = Array.from(e.results as ArrayLike<ArrayLike<{ transcript: string }>>)
+        .map((r) => r[0].transcript)
+        .join(" ");
+      setNote((n) => (n ? `${n} ${text}` : text));
+      toast.success("Voice note added");
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recRef.current = rec;
+    rec.start();
+    setListening(true);
+  };
 
   const onFile = async (file: File) => {
     setPreparing(true);
@@ -59,6 +97,7 @@ function Scan() {
       const r = await analyze({ data: { imageDataUrl: preview, note } });
       setResult(r);
       setMealId(r.meal_id);
+      emitAppEvent("meal-logged");
       toast.success("Meal analyzed & logged");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Analysis failed");
@@ -76,6 +115,7 @@ function Scan() {
     try {
       await addItem({ data: { mealId, item } });
       setAddedKeys((s) => new Set(s).add(key));
+      emitAppEvent("meal-logged");
       toast.success(`Added ${item.name} to this meal`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not add");
