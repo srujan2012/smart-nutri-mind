@@ -278,6 +278,20 @@ export const analyzeMeal = createServerFn({ method: "POST" })
       ? `User profile: age ${profile.age}, ${profile.gender}, ${profile.height_cm}cm, ${profile.weight_kg}kg, diet: ${profile.food_preference}, goal: ${profile.goal}, activity: ${profile.activity_level}, conditions: ${(profile.conditions ?? []).join(", ") || "none"}. Daily targets: ${targets.calories}kcal, ${targets.protein}g protein, ${targets.carbs}g carbs, ${targets.fat}g fat, ${targets.fiber}g fiber, ${targets.water_ml}ml water. Already eaten today: ${consumed.calories.toFixed(0)}kcal, ${consumed.protein.toFixed(0)}g protein, ${consumed.carbs.toFixed(0)}g carbs, ${consumed.fat.toFixed(0)}g fat, ${consumed.fiber.toFixed(0)}g fiber. Remaining before this meal: ${remaining.calories.toFixed(0)}kcal, ${remaining.protein.toFixed(0)}g protein, ${remaining.carbs.toFixed(0)}g carbs, ${remaining.fat.toFixed(0)}g fat, ${remaining.fiber.toFixed(0)}g fiber.`
       : "No profile.";
 
+    // Personalization Engine: learn from the user's own recent meals.
+    const { data: recentMeals } = await context.supabase
+      .from("meals")
+      .select("name, foods, calories, meal_score, consumed_at, meal_type")
+      .eq("user_id", context.userId)
+      .order("consumed_at", { ascending: false })
+      .limit(40);
+    const personalizationPrompt = renderPersonalizationPrompt(
+      buildPersonalizationSignals((recentMeals ?? []) as unknown as PersonalizationMeal[]),
+    );
+
+    // Food database rows for the deterministic calculation engine.
+    const engineFoods = await fetchEngineFoods(context.supabase);
+
     const system = `You are NutriMind, an expert AI nutritionist. Analyze the meal photo. Estimate portion sizes carefully. Return ONLY JSON matching this schema:
 {
   "name": string (short meal name),
