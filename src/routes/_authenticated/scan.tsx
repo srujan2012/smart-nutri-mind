@@ -3,9 +3,12 @@ import { useState, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeMeal, addToMeal } from "@/lib/nutrition.functions";
 import { fileToCompressedDataUrl } from "@/lib/image-compress";
+import { emitAppEvent } from "@/lib/app-events";
+import { formatRange, confidenceLabel } from "@/lib/uncertainty";
 import {
   Camera, Upload, Sparkles, ArrowRight, AlertCircle, CheckCircle2,
   Lightbulb, Plus, TrendingDown, TrendingUp, Clock, Check, Droplets, X, ZoomIn,
+  Mic, MicOff, Database, ShieldAlert, Link2,
 } from "lucide-react";
 import { toast } from "sonner";
 
