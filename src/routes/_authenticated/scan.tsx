@@ -217,12 +217,31 @@ function Scan() {
               </span>
             </button>
           </div>
-          <input
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Add a note (optional) — e.g. 'grilled, no oil'"
-            className="w-full rounded-2xl border border-border bg-input/40 px-4 py-3 text-sm focus:border-primary focus:outline-none"
-          />
+          <div className="flex items-center gap-2">
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add a note (optional) — e.g. 'grilled, no oil', food-label details"
+              className="flex-1 rounded-2xl border border-border bg-input/40 px-4 py-3 text-sm focus:border-primary focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={toggleMic}
+              aria-label={listening ? "Stop voice note" : "Add a voice note"}
+              aria-pressed={listening}
+              title="Voice note — say things like 'grilled with olive oil' or read the food label aloud"
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border transition-colors ${
+                listening
+                  ? "border-destructive bg-destructive/15 text-destructive animate-pulse"
+                  : "border-border text-muted-foreground hover:text-primary hover:border-primary/50"
+              }`}
+            >
+              {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            {listening ? "Listening… tap to stop" : "Photo + text + voice — all three refine the analysis"}
+          </p>
           <div className="flex gap-3">
             <button
               onClick={reset}
