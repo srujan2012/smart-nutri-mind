@@ -327,15 +327,44 @@ Consider the user's profile when scoring and recommending. ${profileCtx}${person
 
     const parsed = MealAnalysisSchema.parse(extractJson(content));
 
+    // ---------- Nutrition Calculation Engine ----------
+    // Recompute the plate from structured food-database rows. The AI's own
+    // numbers are kept as the estimate; engine totals replace them only when
+    // most items matched the database AND both agree in magnitude.
+    const engine = computeMealNutrition(parsed.foods, engineFoods);
+    const useEngine = engine.authoritative && engineAgreesWithAi(engine, parsed.calories);
+    const finalMacros = useEngine
+      ? engine.totals
+      : { calories: parsed.calories, protein: parsed.protein, carbs: parsed.carbs, fat: parsed.fat, fiber: parsed.fiber };
+
+    // ---------- Privacy & Safety Layer ----------
+    // Knowledge-graph allergen filter over every AI suggestion.
+    const allergies = (profile?.allergies ?? []) as string[];
+    const thisMeal = filterSuggestions(parsed.add_to_this_meal, allergies);
+    const nextMeal = filterSuggestions(parsed.add_to_next_meal, allergies);
+    const graphComplements = complementsForPlate(
+      parsed.foods.map((f) => f.name),
+      allergies,
+    );
+
+    const engineSummary = {
+      source: useEngine ? ("database" as const) : ("ai" as const),
+      coverage: engine.coverage,
+      matched: engine.matchedCount,
+      total: engine.totalCount,
+      ranges: engine.ranges,
+      sources: engine.sources,
+    };
+
     const { data: inserted, error } = await context.supabase.from("meals").insert({
       user_id: context.userId,
       name: parsed.name,
       foods: parsed.foods,
-      calories: parsed.calories,
-      protein: parsed.protein,
-      carbs: parsed.carbs,
-      fat: parsed.fat,
-      fiber: parsed.fiber,
+      calories: finalMacros.calories,
+      protein: finalMacros.protein,
+      carbs: finalMacros.carbs,
+      fat: finalMacros.fat,
+      fiber: finalMacros.fiber,
       micros: parsed.micros,
       meal_score: parsed.meal_score,
       grade: parsed.grade,
@@ -344,16 +373,34 @@ Consider the user's profile when scoring and recommending. ${profileCtx}${person
         concerns: parsed.concerns,
         imbalances: parsed.imbalances,
         plate_balance: parsed.plate_balance,
-        add_to_this_meal: parsed.add_to_this_meal,
-        add_to_next_meal: parsed.add_to_next_meal,
+        add_to_this_meal: thisMeal.safe,
+        add_to_next_meal: nextMeal.safe,
         recommendations: parsed.recommendations,
         confidence: parsed.confidence,
+        engine: engineSummary,
+        complements: graphComplements,
+        blocked_add_ons: [...thisMeal.blocked, ...nextMeal.blocked],
+        ai_estimate_calories: useEngine ? parsed.calories : null,
       },
 
     }).select("id").single();
     if (error) throw new Error(error.message);
+
     return {
       ...parsed,
+      calories: finalMacros.calories,
+      protein: finalMacros.protein,
+      carbs: finalMacros.carbs,
+      fat: finalMacros.fat,
+      fiber: finalMacros.fiber,
+      add_to_this_meal: thisMeal.safe,
+      add_to_next_meal: nextMeal.safe,
+      blocked_add_ons: [...thisMeal.blocked, ...nextMeal.blocked],
+      engine: {
+        ...engineSummary,
+        items: engine.items,
+        complements: graphComplements,
+      },
       meal_id: inserted.id,
       daily_remaining: remaining,
       water_recommendation_ml: targets.water_ml,
