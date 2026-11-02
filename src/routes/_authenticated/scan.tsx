@@ -354,6 +354,92 @@ function Scan() {
             ))}
           </ul>
 
+          {result.engine && (
+            <div className="glass rounded-3xl p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                  <Database className="h-4 w-4" /> Nutrition calculation engine
+                </div>
+                <span
+                  className={`rounded-full px-3 py-1 text-[10px] uppercase ${
+                    result.engine.source === "database" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {result.engine.source === "database" ? "Computed from food database" : "AI estimate"}
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {result.engine.source === "database"
+                  ? `${result.engine.matched} of ${result.engine.total} items matched verified food-database entries — amounts are computed from structured data, not guessed by the AI.`
+                  : `${result.engine.matched} of ${result.engine.total} items matched the food database. Unmatched items stay AI estimates, so treat the ranges as approximate.`}
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                {([
+                  ["Calories", result.engine.ranges.calories, "kcal"],
+                  ["Protein", result.engine.ranges.protein, "g"],
+                  ["Carbs", result.engine.ranges.carbs, "g"],
+                  ["Fat", result.engine.ranges.fat, "g"],
+                  ["Fiber", result.engine.ranges.fiber, "g"],
+                ] as [string, [number, number], string][]).map(([label, range, unit]) => (
+                  <div
+                    key={label}
+                    tabIndex={0}
+                    aria-label={`${label} estimated between ${Math.round(range[0])} and ${Math.round(range[1])} ${unit}`}
+                    className="rounded-xl border border-border/60 bg-background/30 p-2 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
+                    <div className="font-mono text-xs">{formatRange(range[0], range[1], unit)}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1">
+                {result.engine.items.map((it, i) => (
+                  <span
+                    key={i}
+                    tabIndex={0}
+                    title={it.matched
+                      ? `From food database${it.data_source ? ` · ${it.data_source}` : ""}${it.verified ? " · verified entry" : ""}`
+                      : "AI estimate — not matched in the database"}
+                    className={`rounded-full px-2 py-0.5 text-[10px] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                      it.matched ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {it.name} · {it.matched ? "DB" : "AI"}
+                  </span>
+                ))}
+              </div>
+              {result.engine.complements?.length > 0 && (
+                <div className="mt-3 space-y-1">
+                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-accent">
+                    <Link2 className="h-3 w-3" /> Knowledge-graph pairings
+                  </div>
+                  {result.engine.complements.map((c, i) => (
+                    <div key={i} className="rounded-xl border border-accent/20 bg-accent/5 p-2 text-[11px] text-muted-foreground">
+                      <span className="font-semibold text-accent">{c.from}</span> → {c.pair}. {c.why}.
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className={`mt-3 text-[10px] uppercase tracking-widest ${
+                confidenceLabel(result.confidence).tone === "low" ? "text-warning" : "text-muted-foreground"
+              }`}>
+                {confidenceLabel(result.confidence).label} · AI confidence {(result.confidence * 100).toFixed(0)}%
+              </div>
+            </div>
+          )}
+
+          {result.blocked_add_ons?.length > 0 && (
+            <div className="glass rounded-3xl border-destructive/40 p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
+                <ShieldAlert className="h-4 w-4" /> Blocked for your allergies
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                The AI suggested {result.blocked_add_ons.join(", ")} — the safety layer filtered them out because they may
+                conflict with your allergy profile, including derivatives (e.g. peanut → peanut oil).
+              </p>
+            </div>
+          )}
+
           {result.plate_balance?.length > 0 && (
             <div className="glass rounded-3xl p-5">
               <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
