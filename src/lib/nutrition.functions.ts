@@ -10,7 +10,7 @@ import {
   computeMealNutrition, engineAgreesWithAi, matchFoodInDb, parsePortion, scaleFood,
   type EngineFood,
 } from "@/lib/nutrition-engine";
-import { buildFoodGraph, complementsForPlate } from "@/lib/food-graph";
+import { complementsForPlate } from "@/lib/food-graph";
 import { filterSuggestions, guardMedicalClaims } from "@/lib/safety";
 import { buildPersonalizationSignals, renderPersonalizationPrompt, type PersonalizationMeal } from "@/lib/personalization";
 
