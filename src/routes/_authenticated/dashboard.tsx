@@ -98,6 +98,22 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Offline-first notice: cached data, clearly labeled */}
+      {offlineNotice && (
+        <div className="flex items-start gap-3 rounded-2xl border border-warning/40 bg-warning/10 p-4 text-sm" role="status">
+          <WifiOff className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+          <div>
+            <div className="font-semibold text-warning">
+              {online ? "Showing your last synced data" : "You're offline"}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Cached {mealsCachedAt ? cacheAgeLabel(mealsCachedAt) : profileCachedAt ? cacheAgeLabel(profileCachedAt) : "recently"} —
+              everything updates automatically when the connection returns. Scanning and logging need internet.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Greeting */}
       <div className="flex items-end justify-between">
         <div>
