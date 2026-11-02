@@ -451,12 +451,25 @@ export const chatWithAI = createServerFn({ method: "POST" })
         : ""
     }\nToday so far: ${totals.calories.toFixed(0)}kcal, ${totals.protein.toFixed(0)}g protein, ${totals.carbs.toFixed(0)}g carbs, ${totals.fat.toFixed(0)}g fat, ${totals.fiber.toFixed(0)}g fiber. Meals logged: ${(meals ?? []).map((m) => m.name).join("; ") || "none"}.\nAlways respect dietary preference and medical conditions. Suggest specific foods with portions. When medical advice is needed, note that a professional should be consulted.${allergyClause(profile)}${sportContext(profile)}`;
 
+    // Personalization Engine: learn from recent meals.
+    const { data: recentMeals } = await context.supabase
+      .from("meals")
+      .select("name, foods, calories, meal_score, consumed_at, meal_type")
+      .eq("user_id", context.userId)
+      .order("consumed_at", { ascending: false })
+      .limit(40);
+    const personalizationPrompt = renderPersonalizationPrompt(
+      buildPersonalizationSignals((recentMeals ?? []) as unknown as PersonalizationMeal[]),
+    );
+
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
-      messages: [{ role: "system", content: system }, ...data.messages],
+      messages: [{ role: "system", content: system + personalizationPrompt }, ...data.messages],
     });
 
-    return { content };
+    // Privacy & Safety Layer: scrub medical claims, never diagnose.
+    const guarded = guardMedicalClaims(content);
+    return { content: guarded.text };
   });
 
 // ---------- Generate meal plan ----------
