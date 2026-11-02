@@ -11,7 +11,7 @@ import {
   type EngineFood,
 } from "@/lib/nutrition-engine";
 import { buildFoodGraph, complementsForPlate } from "@/lib/food-graph";
-import { filterSuggestions } from "@/lib/safety";
+import { filterSuggestions, guardMedicalClaims } from "@/lib/safety";
 import { buildPersonalizationSignals, renderPersonalizationPrompt, type PersonalizationMeal } from "@/lib/personalization";
 
 /** Shared columns fetched from the food database for the calculation engine. */
