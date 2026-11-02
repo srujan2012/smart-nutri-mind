@@ -7,8 +7,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import {
-  computeMealNutrition, engineAgreesWithAi,
-  type EngineFood, type EngineResult,
+  computeMealNutrition, engineAgreesWithAi, matchFoodInDb, parsePortion, scaleFood,
+  type EngineFood,
 } from "@/lib/nutrition-engine";
 import { buildFoodGraph, complementsForPlate } from "@/lib/food-graph";
 import { filterSuggestions } from "@/lib/safety";
