@@ -1,7 +1,30 @@
 // AI-powered nutrition server functions using Lovable AI Gateway (Gemini).
+// The AI identifies what is on the plate; the deterministic Nutrition
+// Calculation Engine (nutrition-engine.ts) computes the amounts from
+// structured food-database rows, the Food Knowledge Graph filters allergens,
+// and the Personalization Engine adapts suggestions to the user's logs.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import {
+  computeMealNutrition, engineAgreesWithAi, matchFoodInDb, parsePortion, scaleFood,
+  type EngineFood,
+} from "@/lib/nutrition-engine";
+import { complementsForPlate } from "@/lib/food-graph";
+import { filterSuggestions, guardMedicalClaims } from "@/lib/safety";
+import { buildPersonalizationSignals, renderPersonalizationPrompt, type PersonalizationMeal } from "@/lib/personalization";
+
+/** Shared columns fetched from the food database for the calculation engine. */
+const FOOD_ENGINE_COLUMNS =
+  "id, name, category, serving_desc, serving_grams, calories, protein, carbs, fat, fiber, allergens, diet_tags, data_source, confidence, verified";
+
+async function fetchEngineFoods(supabase: { from: (t: string) => any }): Promise<EngineFood[]> {
+  const { data } = await supabase
+    .from("foods")
+    .select(FOOD_ENGINE_COLUMNS)
+    .limit(600);
+  return (data ?? []) as unknown as EngineFood[];
+}
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
@@ -255,6 +278,20 @@ export const analyzeMeal = createServerFn({ method: "POST" })
       ? `User profile: age ${profile.age}, ${profile.gender}, ${profile.height_cm}cm, ${profile.weight_kg}kg, diet: ${profile.food_preference}, goal: ${profile.goal}, activity: ${profile.activity_level}, conditions: ${(profile.conditions ?? []).join(", ") || "none"}. Daily targets: ${targets.calories}kcal, ${targets.protein}g protein, ${targets.carbs}g carbs, ${targets.fat}g fat, ${targets.fiber}g fiber, ${targets.water_ml}ml water. Already eaten today: ${consumed.calories.toFixed(0)}kcal, ${consumed.protein.toFixed(0)}g protein, ${consumed.carbs.toFixed(0)}g carbs, ${consumed.fat.toFixed(0)}g fat, ${consumed.fiber.toFixed(0)}g fiber. Remaining before this meal: ${remaining.calories.toFixed(0)}kcal, ${remaining.protein.toFixed(0)}g protein, ${remaining.carbs.toFixed(0)}g carbs, ${remaining.fat.toFixed(0)}g fat, ${remaining.fiber.toFixed(0)}g fiber.`
       : "No profile.";
 
+    // Personalization Engine: learn from the user's own recent meals.
+    const { data: recentMeals } = await context.supabase
+      .from("meals")
+      .select("name, foods, calories, meal_score, consumed_at, meal_type")
+      .eq("user_id", context.userId)
+      .order("consumed_at", { ascending: false })
+      .limit(40);
+    const personalizationPrompt = renderPersonalizationPrompt(
+      buildPersonalizationSignals((recentMeals ?? []) as unknown as PersonalizationMeal[]),
+    );
+
+    // Food database rows for the deterministic calculation engine.
+    const engineFoods = await fetchEngineFoods(context.supabase);
+
     const system = `You are NutriMind, an expert AI nutritionist. Analyze the meal photo. Estimate portion sizes carefully. Return ONLY JSON matching this schema:
 {
   "name": string (short meal name),
@@ -271,7 +308,7 @@ export const analyzeMeal = createServerFn({ method: "POST" })
   "confidence": 0-1
 }
 Be specific and realistic. For 'plate_balance', compare this plate against a sensible single-meal share of daily needs and explain low/high nutrients. Include daily calories, protein requirements, carbohydrates, healthy fats, fiber, water recommendations, meal timing, and recovery nutrition when relevant. For 'add_to_this_meal' suggest things the user can literally add to the plate in front of them (a squeeze of lemon, a sprinkle of seeds, a glass of milk, a side of yogurt) and include exact macros. For 'add_to_next_meal' suggest a proper dish or ingredient that closes the user's remaining daily target gaps and explain what gap it prevents.
-Consider the user's profile when scoring and recommending. ${profileCtx}${allergyClause(profile)}${sportContext(profile)}${data.note ? ` User note: ${data.note}` : ""}`;
+Consider the user's profile when scoring and recommending. ${profileCtx}${personalizationPrompt}${allergyClause(profile)}${sportContext(profile)}${data.note ? ` User note: ${data.note}` : ""}`;
 
 
     const content = await callGateway({
@@ -290,15 +327,44 @@ Consider the user's profile when scoring and recommending. ${profileCtx}${allerg
 
     const parsed = MealAnalysisSchema.parse(extractJson(content));
 
+    // ---------- Nutrition Calculation Engine ----------
+    // Recompute the plate from structured food-database rows. The AI's own
+    // numbers are kept as the estimate; engine totals replace them only when
+    // most items matched the database AND both agree in magnitude.
+    const engine = computeMealNutrition(parsed.foods, engineFoods);
+    const useEngine = engine.authoritative && engineAgreesWithAi(engine, parsed.calories);
+    const finalMacros = useEngine
+      ? engine.totals
+      : { calories: parsed.calories, protein: parsed.protein, carbs: parsed.carbs, fat: parsed.fat, fiber: parsed.fiber };
+
+    // ---------- Privacy & Safety Layer ----------
+    // Knowledge-graph allergen filter over every AI suggestion.
+    const allergies = (profile?.allergies ?? []) as string[];
+    const thisMeal = filterSuggestions(parsed.add_to_this_meal, allergies);
+    const nextMeal = filterSuggestions(parsed.add_to_next_meal, allergies);
+    const graphComplements = complementsForPlate(
+      parsed.foods.map((f) => f.name),
+      allergies,
+    );
+
+    const engineSummary = {
+      source: useEngine ? ("database" as const) : ("ai" as const),
+      coverage: engine.coverage,
+      matched: engine.matchedCount,
+      total: engine.totalCount,
+      ranges: engine.ranges,
+      sources: engine.sources,
+    };
+
     const { data: inserted, error } = await context.supabase.from("meals").insert({
       user_id: context.userId,
       name: parsed.name,
       foods: parsed.foods,
-      calories: parsed.calories,
-      protein: parsed.protein,
-      carbs: parsed.carbs,
-      fat: parsed.fat,
-      fiber: parsed.fiber,
+      calories: finalMacros.calories,
+      protein: finalMacros.protein,
+      carbs: finalMacros.carbs,
+      fat: finalMacros.fat,
+      fiber: finalMacros.fiber,
       micros: parsed.micros,
       meal_score: parsed.meal_score,
       grade: parsed.grade,
@@ -307,16 +373,34 @@ Consider the user's profile when scoring and recommending. ${profileCtx}${allerg
         concerns: parsed.concerns,
         imbalances: parsed.imbalances,
         plate_balance: parsed.plate_balance,
-        add_to_this_meal: parsed.add_to_this_meal,
-        add_to_next_meal: parsed.add_to_next_meal,
+        add_to_this_meal: thisMeal.safe,
+        add_to_next_meal: nextMeal.safe,
         recommendations: parsed.recommendations,
         confidence: parsed.confidence,
+        engine: engineSummary,
+        complements: graphComplements,
+        blocked_add_ons: [...thisMeal.blocked, ...nextMeal.blocked],
+        ai_estimate_calories: useEngine ? parsed.calories : null,
       },
 
     }).select("id").single();
     if (error) throw new Error(error.message);
+
     return {
       ...parsed,
+      calories: finalMacros.calories,
+      protein: finalMacros.protein,
+      carbs: finalMacros.carbs,
+      fat: finalMacros.fat,
+      fiber: finalMacros.fiber,
+      add_to_this_meal: thisMeal.safe,
+      add_to_next_meal: nextMeal.safe,
+      blocked_add_ons: [...thisMeal.blocked, ...nextMeal.blocked],
+      engine: {
+        ...engineSummary,
+        items: engine.items,
+        complements: graphComplements,
+      },
       meal_id: inserted.id,
       daily_remaining: remaining,
       water_recommendation_ml: targets.water_ml,
@@ -367,12 +451,25 @@ export const chatWithAI = createServerFn({ method: "POST" })
         : ""
     }\nToday so far: ${totals.calories.toFixed(0)}kcal, ${totals.protein.toFixed(0)}g protein, ${totals.carbs.toFixed(0)}g carbs, ${totals.fat.toFixed(0)}g fat, ${totals.fiber.toFixed(0)}g fiber. Meals logged: ${(meals ?? []).map((m) => m.name).join("; ") || "none"}.\nAlways respect dietary preference and medical conditions. Suggest specific foods with portions. When medical advice is needed, note that a professional should be consulted.${allergyClause(profile)}${sportContext(profile)}`;
 
+    // Personalization Engine: learn from recent meals.
+    const { data: recentMeals } = await context.supabase
+      .from("meals")
+      .select("name, foods, calories, meal_score, consumed_at, meal_type")
+      .eq("user_id", context.userId)
+      .order("consumed_at", { ascending: false })
+      .limit(40);
+    const personalizationPrompt = renderPersonalizationPrompt(
+      buildPersonalizationSignals((recentMeals ?? []) as unknown as PersonalizationMeal[]),
+    );
+
     const content = await callGateway({
       model: "google/gemini-2.5-flash",
-      messages: [{ role: "system", content: system }, ...data.messages],
+      messages: [{ role: "system", content: system + personalizationPrompt }, ...data.messages],
     });
 
-    return { content };
+    // Privacy & Safety Layer: scrub medical claims, never diagnose.
+    const guarded = guardMedicalClaims(content);
+    return { content: guarded.text };
   });
 
 // ---------- Generate meal plan ----------
@@ -510,6 +607,23 @@ export const addToMeal = createServerFn({ method: "POST" })
       fiber: data.item.fiber,
     };
     if (!macros.calories && !macros.protein && !macros.carbs && !macros.fat && !macros.fiber) {
+      // Nutrition Calculation Engine first: compute from the food database.
+      const engineFoods = await fetchEngineFoods(context.supabase);
+      const row = engineFoods.length ? matchFoodInDb(data.item.name, engineFoods) : null;
+      if (row) {
+        const portion = parsePortion(data.item.amount, row.serving_desc);
+        const scaled = scaleFood(row, portion, 0);
+        macros = {
+          calories: scaled.calories,
+          protein: scaled.protein,
+          carbs: scaled.carbs,
+          fat: scaled.fat,
+          fiber: scaled.fiber,
+        };
+      }
+    }
+    if (!macros.calories && !macros.protein && !macros.carbs && !macros.fat && !macros.fiber) {
+      // No database match — fall back to the AI estimate.
       const content = await callGateway({
         model: "google/gemini-2.5-flash",
         messages: [

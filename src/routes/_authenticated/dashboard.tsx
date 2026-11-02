@@ -5,28 +5,32 @@ import { NutrientRing } from "@/components/NutrientRing";
 import { DailyVitals } from "@/components/DailyVitals";
 import { AdaptiveTargets } from "@/components/AdaptiveTargets";
 import { HealthSafetyBanner } from "@/components/HealthSafetyBanner";
+import { withOfflineCache, useOnlineStatus, cacheAgeLabel } from "@/lib/offline";
 
-import { Camera, MessageSquare, ChefHat, TrendingUp, Sparkles, Award, Droplets, Clock, HeartPulse, Target, Flame, Beef, Wheat, Salad, Nut } from "lucide-react";
+import { Camera, MessageSquare, ChefHat, TrendingUp, Sparkles, Award, Droplets, Clock, HeartPulse, Target, Flame, Beef, Wheat, Salad, Nut, WifiOff } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
 function Dashboard() {
-  const { data: profile } = useQuery({
+  const online = useOnlineStatus();
+  const { data: profileWrap } = useQuery({
     queryKey: ["profile"],
-    queryFn: async () => {
+    queryFn: withOfflineCache("profile", async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
       const { data } = await supabase.from("profiles").select("*").eq("id", u.user.id).maybeSingle();
       return data;
-    },
+    }),
   });
+  const profile = profileWrap?.data ?? null;
+  const profileCachedAt = profileWrap?.cachedAt;
 
   const tz = profile?.timezone ?? undefined;
-  const { data: meals } = useQuery({
+  const { data: mealsWrap } = useQuery({
     queryKey: ["meals-today", tz],
-    queryFn: async () => {
+    queryFn: withOfflineCache(`meals-today:${tz ?? "local"}`, async () => {
       const now = new Date();
       const parts = new Intl.DateTimeFormat("en-US", {
         timeZone: tz || undefined,
@@ -42,9 +46,13 @@ function Dashboard() {
         .gte("consumed_at", start.toISOString())
         .order("consumed_at", { ascending: false });
       return data ?? [];
-    },
+    }),
     enabled: profile !== undefined,
   });
+  const meals = mealsWrap?.data ?? [];
+  const mealsStale = mealsWrap?.staleCache ?? false;
+  const mealsCachedAt = mealsWrap?.cachedAt;
+  const offlineNotice = !online || mealsStale || profileWrap?.staleCache;
 
   const totals = (meals ?? []).reduce(
     (a, m) => ({
@@ -90,6 +98,22 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Offline-first notice: cached data, clearly labeled */}
+      {offlineNotice && (
+        <div className="flex items-start gap-3 rounded-2xl border border-warning/40 bg-warning/10 p-4 text-sm" role="status">
+          <WifiOff className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+          <div>
+            <div className="font-semibold text-warning">
+              {online ? "Showing your last synced data" : "You're offline"}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Cached {mealsCachedAt ? cacheAgeLabel(mealsCachedAt) : profileCachedAt ? cacheAgeLabel(profileCachedAt) : "recently"} —
+              everything updates automatically when the connection returns. Scanning and logging need internet.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Greeting */}
       <div className="flex items-end justify-between">
         <div>

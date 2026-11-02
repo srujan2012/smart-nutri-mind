@@ -3,9 +3,12 @@ import { useState, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeMeal, addToMeal } from "@/lib/nutrition.functions";
 import { fileToCompressedDataUrl } from "@/lib/image-compress";
+import { emitAppEvent } from "@/lib/app-events";
+import { formatRange, confidenceLabel } from "@/lib/uncertainty";
 import {
   Camera, Upload, Sparkles, ArrowRight, AlertCircle, CheckCircle2,
   Lightbulb, Plus, TrendingDown, TrendingUp, Clock, Check, Droplets, X, ZoomIn,
+  Mic, MicOff, Database, ShieldAlert, Link2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,6 +34,44 @@ function Scan() {
   const [addingKey, setAddingKey] = useState<string | null>(null);
   const [previewKey, setPreviewKey] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState(false);
+  const [listening, setListening] = useState(false);
+  const recRef = useRef<{ stop: () => void } | null>(null);
+
+  // Multimodal input: voice note alongside the photo and typed note.
+  const toggleMic = () => {
+    const SR = (window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition
+      ?? (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
+    if (!SR) {
+      toast.error("Voice input isn't supported in this browser — type your note instead");
+      return;
+    }
+    if (listening) {
+      recRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const Rec = SR as new () => {
+      lang: string; interimResults: boolean; continuous: boolean;
+      onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
+      onend: () => void; onerror: () => void; start: () => void; stop: () => void;
+    };
+    const rec = new Rec();
+    rec.lang = navigator.language || "en-IN";
+    rec.interimResults = false;
+    rec.continuous = false;
+    rec.onresult = (e) => {
+      const text = Array.from(e.results as ArrayLike<ArrayLike<{ transcript: string }>>)
+        .map((r) => r[0].transcript)
+        .join(" ");
+      setNote((n) => (n ? `${n} ${text}` : text));
+      toast.success("Voice note added");
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recRef.current = rec;
+    rec.start();
+    setListening(true);
+  };
 
   const onFile = async (file: File) => {
     setPreparing(true);
@@ -56,6 +97,7 @@ function Scan() {
       const r = await analyze({ data: { imageDataUrl: preview, note } });
       setResult(r);
       setMealId(r.meal_id);
+      emitAppEvent("meal-logged");
       toast.success("Meal analyzed & logged");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Analysis failed");
@@ -73,6 +115,7 @@ function Scan() {
     try {
       await addItem({ data: { mealId, item } });
       setAddedKeys((s) => new Set(s).add(key));
+      emitAppEvent("meal-logged");
       toast.success(`Added ${item.name} to this meal`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not add");
@@ -174,12 +217,31 @@ function Scan() {
               </span>
             </button>
           </div>
-          <input
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Add a note (optional) — e.g. 'grilled, no oil'"
-            className="w-full rounded-2xl border border-border bg-input/40 px-4 py-3 text-sm focus:border-primary focus:outline-none"
-          />
+          <div className="flex items-center gap-2">
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add a note (optional) — e.g. 'grilled, no oil', food-label details"
+              className="flex-1 rounded-2xl border border-border bg-input/40 px-4 py-3 text-sm focus:border-primary focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={toggleMic}
+              aria-label={listening ? "Stop voice note" : "Add a voice note"}
+              aria-pressed={listening}
+              title="Voice note — say things like 'grilled with olive oil' or read the food label aloud"
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border transition-colors ${
+                listening
+                  ? "border-destructive bg-destructive/15 text-destructive animate-pulse"
+                  : "border-border text-muted-foreground hover:text-primary hover:border-primary/50"
+              }`}
+            >
+              {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            {listening ? "Listening… tap to stop" : "Photo + text + voice — all three refine the analysis"}
+          </p>
           <div className="flex gap-3">
             <button
               onClick={reset}
@@ -291,6 +353,92 @@ function Scan() {
               </li>
             ))}
           </ul>
+
+          {result.engine && (
+            <div className="glass rounded-3xl p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                  <Database className="h-4 w-4" /> Nutrition calculation engine
+                </div>
+                <span
+                  className={`rounded-full px-3 py-1 text-[10px] uppercase ${
+                    result.engine.source === "database" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {result.engine.source === "database" ? "Computed from food database" : "AI estimate"}
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {result.engine.source === "database"
+                  ? `${result.engine.matched} of ${result.engine.total} items matched verified food-database entries — amounts are computed from structured data, not guessed by the AI.`
+                  : `${result.engine.matched} of ${result.engine.total} items matched the food database. Unmatched items stay AI estimates, so treat the ranges as approximate.`}
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                {([
+                  ["Calories", result.engine.ranges.calories, "kcal"],
+                  ["Protein", result.engine.ranges.protein, "g"],
+                  ["Carbs", result.engine.ranges.carbs, "g"],
+                  ["Fat", result.engine.ranges.fat, "g"],
+                  ["Fiber", result.engine.ranges.fiber, "g"],
+                ] as [string, [number, number], string][]).map(([label, range, unit]) => (
+                  <div
+                    key={label}
+                    tabIndex={0}
+                    aria-label={`${label} estimated between ${Math.round(range[0])} and ${Math.round(range[1])} ${unit}`}
+                    className="rounded-xl border border-border/60 bg-background/30 p-2 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
+                    <div className="font-mono text-xs">{formatRange(range[0], range[1], unit)}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1">
+                {result.engine.items.map((it, i) => (
+                  <span
+                    key={i}
+                    tabIndex={0}
+                    title={it.matched
+                      ? `From food database${it.data_source ? ` · ${it.data_source}` : ""}${it.verified ? " · verified entry" : ""}`
+                      : "AI estimate — not matched in the database"}
+                    className={`rounded-full px-2 py-0.5 text-[10px] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                      it.matched ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {it.name} · {it.matched ? "DB" : "AI"}
+                  </span>
+                ))}
+              </div>
+              {result.engine.complements?.length > 0 && (
+                <div className="mt-3 space-y-1">
+                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-accent">
+                    <Link2 className="h-3 w-3" /> Knowledge-graph pairings
+                  </div>
+                  {result.engine.complements.map((c, i) => (
+                    <div key={i} className="rounded-xl border border-accent/20 bg-accent/5 p-2 text-[11px] text-muted-foreground">
+                      <span className="font-semibold text-accent">{c.from}</span> → {c.pair}. {c.why}.
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className={`mt-3 text-[10px] uppercase tracking-widest ${
+                confidenceLabel(result.confidence).tone === "low" ? "text-warning" : "text-muted-foreground"
+              }`}>
+                {confidenceLabel(result.confidence).label} · AI confidence {(result.confidence * 100).toFixed(0)}%
+              </div>
+            </div>
+          )}
+
+          {result.blocked_add_ons?.length > 0 && (
+            <div className="glass rounded-3xl border-destructive/40 p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
+                <ShieldAlert className="h-4 w-4" /> Blocked for your allergies
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                The AI suggested {result.blocked_add_ons.join(", ")} — the safety layer filtered them out because they may
+                conflict with your allergy profile, including derivatives (e.g. peanut → peanut oil).
+              </p>
+            </div>
+          )}
 
           {result.plate_balance?.length > 0 && (
             <div className="glass rounded-3xl p-5">

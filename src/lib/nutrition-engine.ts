@@ -41,7 +41,8 @@ function singular(word: string): string {
 export function normalizeFoodName(name: string): string[] {
   return name
     .toLowerCase()
-    .replace(/\(.*?\)/g, " ")
+    // keep parenthesized aliases (e.g. "Chickpea Curry (Chole)") — they are
+    // common ways users and the AI name the same food; only drop punctuation
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
     .map((w) => singular(w))

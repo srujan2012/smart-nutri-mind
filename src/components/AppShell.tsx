@@ -1,7 +1,10 @@
 import { Link, useRouter } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { LogOut, LayoutDashboard, Camera, Refrigerator, ChefHat, MessageSquare, User, ShoppingCart, Dumbbell, Settings, Database, Sparkles, ListChecks, Trophy, HeartPulse, Brain } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { onAppEvent, INVALIDATION_MAP } from "@/lib/app-events";
 
 const nav = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Today" },
@@ -28,6 +31,19 @@ const nav = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  // Event-driven architecture: one subscription refreshes every screen whose
+  // data an event affects (meal logged, pantry scanned, profile edited…).
+  useEffect(
+    () =>
+      onAppEvent((e) => {
+        for (const key of INVALIDATION_MAP[e.type] ?? []) {
+          queryClient.invalidateQueries({ queryKey: key });
+        }
+      }),
+    [queryClient],
+  );
 
   const signOut = async () => {
     await supabase.auth.signOut();
