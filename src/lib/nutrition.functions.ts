@@ -607,6 +607,23 @@ export const addToMeal = createServerFn({ method: "POST" })
       fiber: data.item.fiber,
     };
     if (!macros.calories && !macros.protein && !macros.carbs && !macros.fat && !macros.fiber) {
+      // Nutrition Calculation Engine first: compute from the food database.
+      const engineFoods = await fetchEngineFoods(context.supabase);
+      const row = engineFoods.length ? matchFoodInDb(data.item.name, engineFoods) : null;
+      if (row) {
+        const portion = parsePortion(data.item.amount, row.serving_desc);
+        const scaled = scaleFood(row, portion, 0);
+        macros = {
+          calories: scaled.calories,
+          protein: scaled.protein,
+          carbs: scaled.carbs,
+          fat: scaled.fat,
+          fiber: scaled.fiber,
+        };
+      }
+    }
+    if (!macros.calories && !macros.protein && !macros.carbs && !macros.fat && !macros.fiber) {
+      // No database match — fall back to the AI estimate.
       const content = await callGateway({
         model: "google/gemini-2.5-flash",
         messages: [
