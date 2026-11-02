@@ -1,7 +1,30 @@
 // AI-powered nutrition server functions using Lovable AI Gateway (Gemini).
+// The AI identifies what is on the plate; the deterministic Nutrition
+// Calculation Engine (nutrition-engine.ts) computes the amounts from
+// structured food-database rows, the Food Knowledge Graph filters allergens,
+// and the Personalization Engine adapts suggestions to the user's logs.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import {
+  computeMealNutrition, engineAgreesWithAi,
+  type EngineFood, type EngineResult,
+} from "@/lib/nutrition-engine";
+import { buildFoodGraph, complementsForPlate } from "@/lib/food-graph";
+import { filterSuggestions } from "@/lib/safety";
+import { buildPersonalizationSignals, renderPersonalizationPrompt, type PersonalizationMeal } from "@/lib/personalization";
+
+/** Shared columns fetched from the food database for the calculation engine. */
+const FOOD_ENGINE_COLUMNS =
+  "id, name, category, serving_desc, serving_grams, calories, protein, carbs, fat, fiber, allergens, diet_tags, data_source, confidence, verified";
+
+async function fetchEngineFoods(supabase: { from: (t: string) => any }): Promise<EngineFood[]> {
+  const { data } = await supabase
+    .from("foods")
+    .select(FOOD_ENGINE_COLUMNS)
+    .limit(600);
+  return (data ?? []) as unknown as EngineFood[];
+}
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
