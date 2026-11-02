@@ -7,6 +7,7 @@ import {
   Refrigerator, Camera, Upload, Sparkles, ShoppingCart, ChefHat, Clock, Flame, Star, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { emitAppEvent } from "@/lib/app-events";
 
 export const Route = createFileRoute("/_authenticated/fridge")({
   component: Fridge,
@@ -45,6 +46,7 @@ function Fridge() {
     try {
       const r = await scan({ data: { imageDataUrl: preview, note } });
       setResult(r);
+      emitAppEvent("pantry-scanned");
       toast.success("Fridge scanned, planner and grocery list updated");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Scan failed");
