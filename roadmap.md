@@ -39,3 +39,7 @@ Findings verified by code trace + live mobile pass (433×805). Fix top-down; ite
 - Linter: no findings; quick security scan: only the 3 intentional public reference tables (info).
 - No horizontal overflow or console errors on 10 routes at 433×805.
 - Deep security scan running in background (results in Security view).
+
+## Current work
+- [ ] Apply a consistent teen calorie floor to every target-generation and target-save path.
+- [ ] Canonicalize allergy labels and enforce allergy checks across all food suggestions.
